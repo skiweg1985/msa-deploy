@@ -1,0 +1,44 @@
+# hub_config.yaml.example
+
+logging:
+  # Default log level for all loggers without an explicit level.
+  # If omitted, the application will fall back to "INFO".
+  root_level: INFO
+
+  # Base level for all mdns_hub.* loggers.
+  # If omitted, "INFO" is used.
+  mdns_hub_level: INFO
+
+  # Uvicorn internal logger levels.
+  # If omitted, "INFO" is used for each of them.
+  uvicorn_level: INFO
+  uvicorn_error_level: INFO
+  uvicorn_access_level: INFO
+
+security:
+  # Shared secret used by satellites to authenticate against the hub.
+  # Environment variable MDNS_HUB_CONFIG can override the config path,
+  # but if this key is missing, "supergeheim" is used as default.
+  shared_secret: "supergeheim"
+
+  # Optional frontend admin authentication for the Hub UI and SPA.
+  ui_auth_enabled: true
+  admin_username: "admin"
+  admin_password: "CHANGEME"
+  # Prefer a hash in production. Argon2id is supported when argon2-cffi is installed.
+  # admin_password_hash: "$argon2id$..."
+  session_secret: "change-this-random-session-secret"
+  session_ttl_seconds: 28800
+  session_cookie_secure: false
+  allowed_origins:
+    - "http://localhost:5173"
+
+ui:
+  service_filters:
+    # Initial default include list for the Hub services UI.
+    # This list is used only until /api/v1/ui/service-filters persists
+    # an explicit selection into data/hub_ui_settings.json.
+    # An empty list means: show all service types.
+    default_include_service_types:
+      - "_airplay._tcp.local"
+      - "_ipp._tcp.local"

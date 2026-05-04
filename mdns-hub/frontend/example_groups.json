@@ -1,0 +1,20 @@
+[
+  {
+    "group_id": "living-room",
+    "name": "Wohnzimmer",
+    "description": "Alle Geräte im Wohnzimmer",
+    "members": ["mdns-sat-2", "msa-sat-pi"]
+  },
+  {
+    "group_id": "kitchen",
+    "name": "Küche",
+    "description": "Küchen-Geräte",
+    "members": ["mdns-sat-guest"]
+  },
+  {
+    "group_id": "office",
+    "name": "Büro",
+    "description": null,
+    "members": ["mdns-sat-2"]
+  }
+]

@@ -1,0 +1,75 @@
+name: Promote deploy dev to main
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (SemVer without v, e.g. 1.4.0)"
+        required: true
+      create_github_release:
+        description: "Create GitHub release entry"
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate version input
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid version: $VERSION" >&2
+            exit 1
+          fi
+          echo "TAG=v$VERSION" >> "$GITHUB_ENV"
+
+      - name: Prepare git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin dev main --tags
+
+      - name: Ensure tag does not already exist
+        run: |
+          set -euo pipefail
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag already exists: $TAG" >&2
+            exit 1
+          fi
+
+      - name: Promote dev -> main (align main to dev)
+        run: |
+          set -euo pipefail
+          git checkout -B main origin/main
+          git reset --hard origin/dev
+
+      - name: Create release tag on promoted commit
+        run: |
+          set -euo pipefail
+          git tag -a "$TAG" -m "Release $TAG"
+
+      - name: Push main and tag
+        run: |
+          set -euo pipefail
+          git push origin main
+          git push origin "$TAG"
+
+      - name: Create GitHub release
+        if: ${{ inputs.create_github_release }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes "Promoted deploy payload from dev to main."

@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>mDNS Hub – Spoofing</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-100 text-slate-900">
+    <div class="min-h-screen">
+
+        <!-- Header -->
+        <header class="bg-slate-900 text-slate-50 shadow-sm">
+            <div class="max-w-8xl mx-auto px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
+                <!-- LEFT: Logo + App Name + Section -->
+                <div class="flex items-center gap-3 sm:gap-4">
+                    <!-- Logo -->
+                    <img
+                        src="{{ url_for('static', path='img/msa-logo.png') }}"
+                        alt="MSA Logo"
+                        class="h-11 w-auto"
+                    />
+
+                    <!-- Textblock -->
+                    <div class="flex flex-col leading-tight">
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-base sm:text-lg font-semibold tracking-tight">
+                                MSA
+                            </span>
+                            <span class="hidden sm:inline text-xs text-slate-400">
+                                mDNS Service Atlas
+                            </span>
+                        </div>
+                        <span class="text-xs sm:text-sm text-slate-300">
+                            Spoofing
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Selected class="px-3 sm:px-4 py-1.5 rounded-lg font-medium bg-slate-50 text-slate-900 shadow-sm"> -->
+                <!-- Not Selected class="px-3 sm:px-4 py-1.5 rounded-lg font-medium text-slate-100 hover:bg-slate-700"> -->
+                <!-- RIGHT: Navigation (Tabs) -->
+                <nav class="flex items-center">
+                    <div class="inline-flex rounded-xl bg-slate-800/80 p-1 text-xs sm:text-sm border border-slate-700/70">
+                        <a href="/ui/sats"
+                        class="px-3 sm:px-4 py-1.5 rounded-lg font-medium text-slate-100 hover:bg-slate-700">
+                            Satelliten
+                        </a>
+                        <a href="/ui/services"
+                        class="px-3 sm:px-4 py-1.5 rounded-lg font-medium text-slate-100 hover:bg-slate-700">
+                            Services
+                        </a>
+                        <a href="/ui/spoofing"
+                        class="px-3 sm:px-4 py-1.5 rounded-lg font-medium bg-slate-50 text-slate-900 shadow-sm">
+                            Spoofing
+                        </a>
+                        <a href="/ui/groups"
+                        class="px-3 sm:px-4 py-1.5 rounded-lg font-medium text-slate-100 hover:bg-slate-700">
+                            Groups
+                        </a>
+                    </div>
+                </nav>
+
+            </div>
+        </header>
+
+        <!-- MAIN -->
+        <main class="mx-auto max-w-8xl px-4 sm:px-6 py-8">
+            <div class="bg-white shadow-xl rounded-2xl p-6 sm:p-8 border border-slate-200">
+
+                <!-- Kopfbereich -->
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-base sm:text-lg font-semibold text-slate-900">
+                            Spoofing-Konfigurationen
+                        </h2>
+                        <p class="mt-1 text-xs sm:text-sm text-slate-500">
+                            Alle bekannten Spoof-Configs – unabhängig davon, ob der Service aktuell im Netz sichtbar
+                            ist.
+                        </p>
+                    </div>
+                    <div class="text-right text-xs sm:text-sm text-slate-500 space-y-1">
+                        <p>
+                            Einträge insgesamt:
+                            <span id="totalCount" class="font-semibold text-slate-800">0</span>
+                        </p>
+                        <p>
+                            Sichtbar nach Filter:
+                            <span id="visibleCount" class="font-semibold text-slate-800">0</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Filterzeile -->
+                <div
+                    class="flex flex-col lg:flex-row gap-3 lg:items-end mb-4 border border-slate-200 rounded-xl px-3 sm:px-4 py-3 bg-slate-50">
+                    <div class="flex-1">
+                        <label class="block text-[0.7rem] uppercase tracking-wide text-slate-600 mb-1">
+                            Suche
+                        </label>
+                        <input id="filterSearch" type="text" placeholder="Service-Key, Note, Target (Sat/IF/VLAN) ..."
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                    </div>
+
+                    <div class="w-full lg:w-48">
+                        <label class="block text-[0.7rem] uppercase tracking-wide text-slate-600 mb-1">
+                            Status
+                        </label>
+                        <select id="filterStatus"
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                            <option value="">(alle)</option>
+                            <option value="active">nur aktive</option>
+                            <option value="inactive">nur inaktive</option>
+                        </select>
+                    </div>
+
+                    <div class="w-full lg:w-64">
+                        <label class="block text-[0.7rem] uppercase tracking-wide text-slate-600 mb-1">
+                            Sat-Filter (Targets)
+                        </label>
+                        <input id="filterSat" type="text" placeholder="z.B. mdns-sat-guest"
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                    </div>
+
+                    <div class="flex lg:flex-col items-stretch lg:items-end gap-2 pt-1 lg:pt-0">
+                        <button id="filterReset" type="button" class="inline-flex items-center justify-center rounded-lg border border-slate-300
+                                   bg-white px-3 py-1.5 text-[0.7rem] sm:text-xs font-medium text-slate-700
+                                   hover:bg-slate-50">
+                            Filter zurücksetzen
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabelle -->
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="min-w-full text-xs sm:text-sm">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr class="text-left text-[0.7rem] sm:text-xs uppercase tracking-wide text-slate-500">
+                                <th class="px-3 sm:px-4 py-2 whitespace-nowrap">Service-Key</th>
+                                <th class="px-3 sm:px-4 py-2 whitespace-nowrap">Note</th>
+                                <th class="px-3 sm:px-4 py-2 whitespace-nowrap">Targets</th>
+                                <th class="px-3 sm:px-4 py-2 whitespace-nowrap text-center">Status</th>
+                                <th class="px-3 sm:px-4 py-2 whitespace-nowrap text-right">Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="spoofTableBody" class="divide-y divide-slate-100 bg-white">
+                            <!-- Rows per JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Targets-Overlay -->
+    <div id="targetsOverlay" class="fixed inset-0 z-40 hidden bg-black/40 backdrop-blur-sm">
+        <div class="flex min-h-screen items-center justify-center p-3 sm:p-4">
+            <div
+                class="w-full max-w-3xl max-h-[90vh] overflow-hidden bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col">
+                <!-- Header -->
+                <div class="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-slate-200">
+                    <div>
+                        <h2 class="text-base sm:text-lg font-semibold text-slate-900">
+                            Targets bearbeiten
+                        </h2>
+                        <p id="targetsServiceKey"
+                            class="mt-0.5 text-[0.7rem] sm:text-xs text-slate-500 font-mono break-all"></p>
+                    </div>
+                    <button type="button"
+                        class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                        onclick="closeTargetsOverlay()">
+                        ✕
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <div class="px-4 sm:px-6 py-4 text-xs sm:text-sm overflow-y-auto">
+                    <p class="text-[0.7rem] sm:text-xs text-slate-500 mb-3">
+                        Wähle pro Zeile Sat, Interfaces (mehrfach möglich) und optional VLANs. Leere Zeilen werden
+                        ignoriert.
+                    </p>
+
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-[0.7rem] uppercase tracking-wide text-slate-500">
+                            Targets
+                        </h3>
+                        <button type="button" class="inline-flex items-center rounded-lg border border-slate-300
+                                   px-2 py-1 text-[0.7rem] sm:text-xs text-slate-700 bg-white hover:bg-slate-50"
+                            onclick="addTargetEditorRow()">
+                            + Target hinzufügen
+                        </button>
+                    </div>
+
+                    <div id="targetsRowsContainer" class="space-y-2">
+                        <!-- Zeilen per JS -->
+                    </div>
+
+                    <div id="targetsError"
+                        class="hidden mt-3 text-[0.7rem] sm:text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="px-4 sm:px-6 py-3 border-t border-slate-200 flex justify-end gap-2">
+                    <button type="button"
+                        class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
+                        onclick="closeTargetsOverlay()">
+                        Abbrechen
+                    </button>
+                    <button id="targetsSaveButton" type="button" class="rounded-lg border border-emerald-600 px-3 py-1.5 text-xs sm:text-sm font-medium
+                               text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-wait"
+                        onclick="saveTargetsFromOverlay()">
+                        Speichern
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // API-Basen
+        const LIST_URL = "/api/v1/spoofing";          // GET  -> List<SpoofConfig>
+        const PUT_BASE = "/api/v1/spoofing/";         // PUT  /{service_key}
+        const DELETE_BASE = "/api/v1/spoofing/";      // DELETE /{service_key}
+        const SATS_SUMMARY = "/api/v1/satellites/";   // GET  -> [{sat_id, hostname, mgmt_interface, interfaces:[...]}]
+
+        // Filter-Persistenz
+        const FILTER_STORAGE_KEY = "mdns_spoof_filters_v1";
+
+        // wird per API gefüllt
+        let spoofRows = [];
+        let satsMeta = [];
+
+        // aktuell im Overlay bearbeiteter Service-Key
+        let currentTargetsKey = null;
+
+        function shorten(str, max = 60) {
+            if (!str) return "–";
+            if (str.length <= max) return str;
+            return str.slice(0, max - 1) + "…";
+        }
+
+        // NEU: "Middle-Ellipsis", z.B. "amzn.dmgr:E3424…VDMM+4u1:48"
+        function shortenMiddle(str, max = 60) {
+            if (!str) return "–";
+            if (str.length <= max) return str;
+            const keep = Math.max(4, Math.floor((max - 1) / 2));
+            const start = str.slice(0, keep);
+            const end = str.slice(-keep);
+            return start + "…" + end;
+        }
+
+        function buildTargetsLabel(targets) {
+            if (!Array.isArray(targets) || targets.length === 0) return "–";
+            return targets.map(t => {
+                const parts = [];
+                if (t.sat_id) parts.push(t.sat_id);
+
+                const ifaces = normalizeIfaceList(t.iface);
+                if (ifaces.length > 0) {
+                    parts.push("IF " + ifaces.join(", "));
+                }
+
+                if (Array.isArray(t.vlans) && t.vlans.length > 0) {
+                    parts.push("VLANs " + t.vlans.join(","));
+                }
+
+                return parts.join(" · ");
+            }).join(" | ");
+        }
+
+        function normalizeIfaceList(ifaceField) {
+            // Erwartet: null/undefined, String "ens160,ens160.222" oder Array wie ["ens160", "ens160.222"]
+            if (!ifaceField) return [];
+            if (Array.isArray(ifaceField)) {
+                return ifaceField
+                    .map(v => String(v).trim())
+                    .filter(v => v.length > 0);
+            }
+            if (typeof ifaceField === "string") {
+                return ifaceField
+                    .split(",")
+                    .map(v => v.trim())
+                    .filter(v => v.length > 0);
+            }
+            return [];
+        }
+
+        function applyFilters() {
+            const search = (document.getElementById("filterSearch").value || "").toLowerCase();
+            const status = document.getElementById("filterStatus").value;
+            const satFilter = (document.getElementById("filterSat").value || "").toLowerCase();
+
+            return spoofRows.filter(row => {
+                // Status
+                if (status === "active" && !row.enabled) return false;
+                if (status === "inactive" && row.enabled) return false;
+
+                // Sat-Filter (Targets)
+                if (satFilter) {
+                    const tStr = buildTargetsLabel(row.targets || []).toLowerCase();
+                    if (!tStr.includes(satFilter)) return false;
+                }
+
+                // Suchfilter: Service-Key + Note + Targets als Text
+                if (search) {
+                    const haystack = [
+                        row.service_key || "",
+                        row.note || "",
+                        buildTargetsLabel(row.targets || [])   // wichtig: [] statt ""
+                    ].join(" ").toLowerCase();
+
+                    if (!haystack.includes(search)) return false;
+                }
+
+                return true;
+            });
+        }
+
+        function parseServiceKey(key) {
+            // key: service_name|instance_name (ggf. inkl. .service-Suffix)
+            key = key || "";
+            const parts = key.split("|");
+            const serviceName = parts[0] || "";
+            const instanceRaw = parts.slice(1).join("|") || "";
+
+            let instanceName = instanceRaw;
+
+            // Falls der Instance-Name noch den Service-Suffix drin hat: weg damit
+            // Beispiel: "Küche._airplay._tcp.local" -> "Küche"
+            if (serviceName && instanceName.endsWith("." + serviceName)) {
+                instanceName = instanceName.slice(0, -(serviceName.length + 1));
+            }
+
+            return {
+                serviceName,
+                instanceName
+            };
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById("spoofTableBody");
+            tbody.innerHTML = "";
+
+            const filtered = applyFilters();
+
+            const totalEl = document.getElementById("totalCount");
+            const visibleEl = document.getElementById("visibleCount");
+            if (totalEl) totalEl.textContent = spoofRows.length;
+            if (visibleEl) visibleEl.textContent = filtered.length;
+
+            filtered.forEach(row => {
+                const key = row.service_key || "";
+
+                const parsed = parseServiceKey(key);
+                const niceInstance = parsed.instanceName || "(ohne Instanz)";
+                const niceService = parsed.serviceName || "(ohne Service)";
+
+                const safeKeyJs = key
+                    .replace(/\\/g, "\\\\")
+                    .replace(/'/g, "\\'");
+
+                const tr = document.createElement("tr");
+                tr.className = "align-top hover:bg-slate-50";
+
+                const targetsLabel = buildTargetsLabel(row.targets || []);
+
+                const statusPillClassBase =
+                    "inline-flex items-center rounded-full px-3 py-0.5 text-[0.7rem] sm:text-xs border";
+                const statusPillClass = row.enabled
+                    ? statusPillClassBase + " bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                    : statusPillClassBase + " bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200";
+
+                const statusLabel = row.enabled ? "aktiv" : "inaktiv";
+
+                const deleteBtnClass =
+                    "rounded-full border border-red-500 text-red-600 px-3 py-1 text-[0.7rem] sm:text-xs font-medium hover:bg-red-50";
+
+                tr.innerHTML = `
+                    <td class="px-3 sm:px-4 py-2 align-top">
+                        <div class="font-mono text-[0.7rem] sm:text-xs text-slate-900 break-all" title="${key}">
+                            <div class="text-slate-900">
+                                ${shortenMiddle(niceInstance, 50)}
+                            </div>
+                            <div class="text-[0.65rem] text-slate-500">
+                                ${shortenMiddle(niceService, 40)}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-3 sm:px-4 py-2 align-top">
+                        <div class="text-[0.7rem] sm:text-xs text-slate-900 break-all">
+                            ${row.note ? shorten(row.note, 80) : "–"}
+                        </div>
+                    </td>
+                    <td class="px-3 sm:px-4 py-2 align-top">
+                        <button type="button"
+                            class="w-full text-left rounded-lg px-2 py-1 text-[0.7rem] sm:text-xs
+                                ${targetsLabel === "–" ? "text-slate-400 italic hover:bg-slate-50" : "text-slate-700 hover:bg-slate-50"}"
+                            onclick="openTargetsOverlay('${safeKeyJs}')">
+                            ${targetsLabel === "–" ? "Targets setzen …" : targetsLabel}
+                        </button>
+                    </td>
+                    <td class="px-3 sm:px-4 py-2 align-top text-center whitespace-nowrap">
+                        <button type="button"
+                            class="${statusPillClass}"
+                            onclick="toggleSpoof('${safeKeyJs}', ${row.enabled ? "false" : "true"})">
+                            ${statusLabel}
+                        </button>
+                    </td>
+                    <td class="px-3 sm:px-4 py-2 align-top text-right whitespace-nowrap">
+                        <button type="button"
+                            class="${deleteBtnClass}"
+                            onclick="deleteSpoof('${safeKeyJs}')">
+                            löschen
+                        </button>
+                    </td>
+            `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function loadSpoofingData() {
+            try {
+                const resp = await fetch(LIST_URL, { method: "GET" });
+                if (!resp.ok) {
+                    console.error("Fehler beim Laden der Spoof-Configs:", resp.status);
+                    spoofRows = [];
+                    renderTable();
+                    return;
+                }
+                const data = await resp.json();
+
+                // Normalisieren der API-Rückgabe -> reines Frontend-Format
+                spoofRows = (Array.isArray(data) ? data : []).map(cfg => ({
+                    service_key: cfg.service_key || "",
+                    enabled: !!cfg.enabled,
+                    note: cfg.note || "",
+                    targets: Array.isArray(cfg.targets) ? cfg.targets : []
+                }));
+
+                renderTable();
+            } catch (e) {
+                console.error("Unerwarteter Fehler beim Laden der Spoof-Configs:", e);
+                spoofRows = [];
+                renderTable();
+            }
+        }
+
+        async function loadSatsMeta() {
+            try {
+                const resp = await fetch(SATS_SUMMARY, { method: "GET" });
+                if (!resp.ok) {
+                    console.error("Fehler beim Laden der Sat-Summary:", resp.status);
+                    satsMeta = [];
+                    return;
+                }
+                const data = await resp.json();
+                satsMeta = Array.isArray(data) ? data : [];
+            } catch (e) {
+                console.error("Unerwarteter Fehler beim Laden der Sat-Summary:", e);
+                satsMeta = [];
+            }
+        }
+
+        function findSatMeta(satId) {
+            if (!Array.isArray(satsMeta)) return null;
+            return satsMeta.find(s => s.sat_id === satId) || null;
+        }
+
+        async function toggleSpoof(key, enable) {
+            const row = spoofRows.find(r => r.service_key === key);
+            if (!row) return;
+
+            const payload = {
+                service_key: row.service_key,
+                enabled: !!enable,
+                note: row.note || null,
+                targets: row.targets || []
+            };
+
+            try {
+                const resp = await fetch(PUT_BASE + encodeURIComponent(key), {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                if (!resp.ok) {
+                    alert("Fehler beim Speichern der Spoof-Config: " + resp.status);
+                    return;
+                }
+                const data = await resp.json();
+                row.enabled = !!data.enabled;
+                row.note = data.note || "";
+                row.targets = Array.isArray(data.targets) ? data.targets : [];
+                renderTable();
+            } catch (e) {
+                console.error(e);
+                alert("Unerwarteter Fehler beim Speichern.");
+            }
+        }
+
+        async function deleteSpoof(key) {
+            if (!confirm(`Spoofing-Config für\n\n${key}\n\nwirklich löschen?`)) {
+                return;
+            }
+
+            try {
+                const resp = await fetch(DELETE_BASE + encodeURIComponent(key), {
+                    method: "DELETE"
+                });
+                if (!resp.ok) {
+                    alert("Fehler beim Löschen: " + resp.status);
+                    return;
+                }
+                spoofRows = spoofRows.filter(r => r.service_key !== key);
+                renderTable();
+            } catch (e) {
+                console.error(e);
+                alert("Unerwarteter Fehler beim Löschen.");
+            }
+        }
+
+        /* -------- Filter-Persistenz -------- */
+
+        function saveFiltersToStorage() {
+            const filterState = {
+                search: document.getElementById("filterSearch").value || "",
+                status: document.getElementById("filterStatus").value || "",
+                sat: document.getElementById("filterSat").value || ""
+            };
+            try {
+                localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(filterState));
+            } catch (e) {
+                console.warn("Konnte Filter nicht speichern (localStorage):", e);
+            }
+        }
+
+        function loadFiltersFromStorage() {
+            try {
+                const raw = localStorage.getItem(FILTER_STORAGE_KEY);
+                if (!raw) return;
+                const state = JSON.parse(raw) || {};
+                if (typeof state.search === "string") {
+                    document.getElementById("filterSearch").value = state.search;
+                }
+                if (typeof state.status === "string") {
+                    document.getElementById("filterStatus").value = state.status;
+                }
+                if (typeof state.sat === "string") {
+                    document.getElementById("filterSat").value = state.sat;
+                }
+            } catch (e) {
+                console.warn("Konnte Filter nicht laden (localStorage):", e);
+            }
+        }
+
+        function onFilterChange() {
+            saveFiltersToStorage();
+            renderTable();
+        }
+
+        /* -------- Targets-Overlay: Helper -------- */
+
+        function closeTargetsOverlay() {
+            const overlay = document.getElementById("targetsOverlay");
+            overlay.classList.add("hidden");
+            currentTargetsKey = null;
+            document.getElementById("targetsRowsContainer").innerHTML = "";
+            const err = document.getElementById("targetsError");
+            err.classList.add("hidden");
+            err.textContent = "";
+        }
+
+        function groupTargetsForOverlay(targets) {
+            const groupsMap = new Map();
+            if (!Array.isArray(targets)) return [];
+
+            targets.forEach(t => {
+                const satId = t.sat_id || "";
+                const vlans = Array.isArray(t.vlans)
+                    ? t.vlans.slice().sort((a, b) => a - b)
+                    : [];
+
+                // iface-Feld immer als Liste von Strings interpretieren
+                const ifaceList = normalizeIfaceList(t.iface);
+
+                const key = satId + "|" + vlans.join(",");
+
+                let g = groupsMap.get(key);
+                if (!g) {
+                    g = { satId, vlans, ifaces: [] };
+                    groupsMap.set(key, g);
+                }
+
+                ifaceList.forEach(ifName => {
+                    if (ifName && !g.ifaces.includes(ifName)) {
+                        g.ifaces.push(ifName);
+                    }
+                });
+            });
+
+            return Array.from(groupsMap.values()).map(g => ({
+                satId: g.satId,
+                ifaces: g.ifaces,
+                vlansStr: g.vlans.join(",")
+            }));
+        }
+
+        function renderInterfacesForRow(rowEl, satId, selectedIfs) {
+            const container = rowEl.querySelector(".target-ifaces");
+            if (!container) return;
+            container.innerHTML = "";
+
+            const meta = findSatMeta(satId);
+            if (!meta || !Array.isArray(meta.interfaces) || meta.interfaces.length === 0) {
+                const info = document.createElement("div");
+                info.className = "text-[0.65rem] text-slate-400 italic";
+                info.textContent = "Keine Interface-Infos vorhanden.";
+                container.appendChild(info);
+                return;
+            }
+
+            const selectedSet = new Set(selectedIfs || []);
+
+            meta.interfaces.forEach(ifMeta => {
+                const isMgmt = meta.mgmt_interface && meta.mgmt_interface === ifMeta.name;
+                const labelText = isMgmt ? `${ifMeta.name} (Mgmt)` : ifMeta.name;
+
+                const label = document.createElement("label");
+                label.className =
+                    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[0.7rem] sm:text-xs " +
+                    "cursor-pointer select-none " +
+                    (selectedSet.has(ifMeta.name)
+                        ? "bg-slate-900 text-slate-50 border-slate-900"
+                        : "bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100");
+
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.value = ifMeta.name;
+                checkbox.className = "target-iface-checkbox h-3.5 w-3.5 rounded border-slate-300 text-slate-900";
+                checkbox.checked = selectedSet.has(ifMeta.name);
+
+                // Beim Klicken Styling aktualisieren
+                checkbox.addEventListener("change", () => {
+                    if (checkbox.checked) {
+                        label.classList.remove("bg-slate-50", "text-slate-700", "border-slate-300", "hover:bg-slate-100");
+                        label.classList.add("bg-slate-900", "text-slate-50", "border-slate-900");
+                    } else {
+                        label.classList.add("bg-slate-50", "text-slate-700", "border-slate-300", "hover:bg-slate-100");
+                        label.classList.remove("bg-slate-900", "text-slate-50", "border-slate-900");
+                    }
+                });
+
+                const span = document.createElement("span");
+                span.textContent = labelText;
+
+                label.appendChild(checkbox);
+                label.appendChild(span);
+                container.appendChild(label);
+            });
+        }
+
+        function addTargetEditorRow(prefill) {
+            const container = document.getElementById("targetsRowsContainer");
+
+            const defaultSat = prefill?.satId ||
+                (Array.isArray(satsMeta) && satsMeta.length > 0 ? satsMeta[0].sat_id : "");
+
+            const ifaces = prefill?.ifaces || [];
+            const vlansStr = prefill?.vlansStr || "";
+
+            const row = document.createElement("div");
+            row.className = "target-row border border-slate-200 rounded-xl px-3 py-2";
+
+            let satOptions = `<option value="">(Sat wählen)</option>`;
+            if (Array.isArray(satsMeta)) {
+                satsMeta.forEach(s => {
+                    const label = s.hostname && s.hostname !== s.sat_id
+                        ? `${s.sat_id} (${s.hostname})`
+                        : s.sat_id;
+                    const selected = (s.sat_id === defaultSat) ? "selected" : "";
+                    satOptions += `<option value="${s.sat_id}" ${selected}>${label}</option>`;
+                });
+            }
+
+            row.innerHTML = `
+          <div class="flex flex-col sm:flex-row gap-3 sm:items-start">
+            <div class="sm:w-56 flex flex-col gap-1">
+              <label class="text-[0.65rem] uppercase tracking-wide text-slate-500">
+                Sat
+              </label>
+              <select class="target-sat w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-[0.75rem] sm:text-xs shadow-sm focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400">
+                ${satOptions}
+              </select>
+            </div>
+
+            <div class="flex-1 flex flex-col gap-1">
+              <label class="text-[0.65rem] uppercase tracking-wide text-slate-500">
+                Interfaces
+              </label>
+              <div class="target-ifaces flex flex-wrap gap-1.5 mt-0.5"></div>
+              <p class="mt-1 text-[0.65rem] text-slate-400">Mehrere Interfaces möglich.</p>
+            </div>
+
+            <div class="sm:w-48 flex flex-col gap-1">
+              <label class="text-[0.65rem] uppercase tracking-wide text-slate-500">
+                VLANs (Komma-getrennt, optional)
+              </label>
+              <input type="text"
+                     class="target-vlans w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-[0.75rem] sm:text-xs shadow-sm focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400"
+                     placeholder="z.B. 10,20,30"
+                     value="${vlansStr}">
+            </div>
+
+            <div class="flex items-start pt-6 sm:pt-7">
+              <button type="button"
+                      class="rounded-full border border-slate-300 text-slate-500 px-2 py-1 text-[0.7rem] sm:text-xs hover:bg-slate-50"
+                      onclick="removeTargetEditorRow(this)">
+                ✕
+              </button>
+            </div>
+          </div>
+        `;
+
+            container.appendChild(row);
+
+            // Initial Interfaces rendern
+            const satSelect = row.querySelector(".target-sat");
+            satSelect.addEventListener("change", () => {
+                renderInterfacesForRow(row, satSelect.value, []);
+            });
+
+            renderInterfacesForRow(row, defaultSat, ifaces);
+        }
+
+        function removeTargetEditorRow(btn) {
+            const row = btn.closest(".target-row");
+            if (row && row.parentNode) {
+                row.parentNode.removeChild(row);
+            }
+        }
+
+        function openTargetsOverlay(key) {
+            const row = spoofRows.find(r => r.service_key === key);
+            if (!row) return;
+
+            currentTargetsKey = key;
+            document.getElementById("targetsServiceKey").textContent = key;
+
+            const container = document.getElementById("targetsRowsContainer");
+            container.innerHTML = "";
+
+            const groups = groupTargetsForOverlay(row.targets || []);
+
+            if (groups.length === 0) {
+                addTargetEditorRow({ satId: "", ifaces: [], vlansStr: "" });
+            } else {
+                groups.forEach(g => addTargetEditorRow(g));
+            }
+
+            const overlay = document.getElementById("targetsOverlay");
+            overlay.classList.remove("hidden");
+        }
+
+        async function saveTargetsFromOverlay() {
+            const err = document.getElementById("targetsError");
+            err.classList.add("hidden");
+            err.textContent = "";
+
+            if (!currentTargetsKey) return;
+
+            const row = spoofRows.find(r => r.service_key === currentTargetsKey);
+            if (!row) return;
+
+            const rows = document.querySelectorAll("#targetsRowsContainer .target-row");
+            const newTargets = [];
+
+            rows.forEach(rowEl => {
+                const satEl = rowEl.querySelector(".target-sat");
+                const vlansEl = rowEl.querySelector(".target-vlans");
+                const ifaceEls = rowEl.querySelectorAll(".target-iface-checkbox");
+
+                const satId = (satEl?.value || "").trim();
+                const vlanStr = (vlansEl?.value || "").trim();
+
+                const selectedIfs = Array.from(ifaceEls || [])
+                    .filter(cb => cb.checked)
+                    .map(cb => cb.value);
+
+                if (!satId && !vlanStr && selectedIfs.length === 0) {
+                    // komplett leere Zeile -> ignorieren
+                    return;
+                }
+
+                // VLANs parsen
+                let vlans = [];
+                if (vlanStr) {
+                    vlanStr.split(",").forEach(v => {
+                        const n = Number(v.trim());
+                        if (!isNaN(n)) vlans.push(n);
+                    });
+                }
+
+                if (selectedIfs.length === 0) {
+                    // kein IF gewählt -> "any" Interface auf diesem Sat
+                    newTargets.push({
+                        sat_id: satId,
+                        use_mgmt: false,
+                        vlans: vlans,
+                        iface: []        // oder null, je nachdem wie der Hub "any" interpretiert
+                    });
+                } else {
+                    selectedIfs.forEach(ifName => {
+                        newTargets.push({
+                            sat_id: satId,
+                            use_mgmt: false,
+                            vlans: vlans,
+                            iface: [ifName]   // <─ jetzt immer Liste
+                        });
+                    });
+                }
+
+            });
+
+            if (newTargets.length === 0) {
+                err.textContent = "Bitte mindestens ein Target angeben oder das Spoofing vollständig löschen.";
+                err.classList.remove("hidden");
+                return;
+            }
+
+            // Payload bauen
+            const payload = {
+                service_key: row.service_key,
+                enabled: !!row.enabled,
+                note: row.note || null,
+                targets: newTargets
+            };
+
+            const btn = document.getElementById("targetsSaveButton");
+            btn.disabled = true;
+
+            try {
+                const resp = await fetch(PUT_BASE + encodeURIComponent(row.service_key), {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                if (!resp.ok) {
+                    err.textContent = "Fehler beim Speichern der Targets: " + resp.status;
+                    err.classList.remove("hidden");
+                    btn.disabled = false;
+                    return;
+                }
+                const data = await resp.json();
+                row.enabled = !!data.enabled;
+                row.note = data.note || "";
+                row.targets = Array.isArray(data.targets) ? data.targets : [];
+
+                closeTargetsOverlay();
+                renderTable();
+            } catch (e) {
+                console.error(e);
+                err.textContent = "Unerwarteter Fehler beim Speichern: " + e;
+                err.classList.remove("hidden");
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const searchEl = document.getElementById("filterSearch");
+            const statusEl = document.getElementById("filterStatus");
+            const satEl = document.getElementById("filterSat");
+            const resetEl = document.getElementById("filterReset");
+
+            // Filter aus localStorage wiederherstellen
+            loadFiltersFromStorage();
+
+            // Filter-Events -> speichern + rendern
+            searchEl.addEventListener("input", onFilterChange);
+            statusEl.addEventListener("change", onFilterChange);
+            satEl.addEventListener("input", onFilterChange);
+
+            resetEl.addEventListener("click", () => {
+                searchEl.value = "";
+                statusEl.value = "";
+                satEl.value = "";
+                saveFiltersToStorage();
+                renderTable();
+            });
+
+            // Daten laden
+            loadSatsMeta();
+            loadSpoofingData();
+        });
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,2134 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>mDNS Hub – Services</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* kompakte Tab-Basisstyles, Rest über Tailwind-Klassen */
+        .detail-tab {
+            padding: 6px 12px;
+            border-radius: 9999px;
+            margin-bottom: 2px;
+            cursor: pointer;
+        }
+
+        .detail-tab.active {
+            font-weight: 600;
+        }
+
+        .service-type-dropdown[hidden] {
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-950 text-slate-50 antialiased">
+    <div class="min-h-screen flex flex-col">
+
+        <!-- App-Shell Header -->
+        <header class="border-b border-slate-800 bg-slate-950/95 backdrop-blur">
+            <div
+                class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <!-- LEFT: Logo + App Name + Section -->
+                <div class="flex items-center gap-3 sm:gap-4">
+                    <div
+                        class="flex items-center justify-center h-10 w-10 rounded-xl bg-slate-800/70 ring-1 ring-slate-700/70">
+                        <img src="{{ url_for('static', path='img/msa-logo.png') }}" alt="MSA Logo" class="h-7 w-auto" />
+                    </div>
+                    <div class="flex flex-col leading-tight">
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-lg sm:text-xl font-semibold tracking-tight text-slate-50">MSA</span>
+                            <span
+                                class="hidden sm:inline text-xs font-medium tracking-wide text-slate-400 uppercase">mDNS
+                                Service Atlas</span>
+                        </div>
+                        <span
+                            class="text-[0.7rem] sm:text-xs font-medium tracking-wide text-sky-300/80 uppercase">Services</span>
+                    </div>
+                </div>
+
+                <!-- RIGHT: Navigation -->
+                <nav class="flex items-center" aria-label="Hauptnavigation">
+                    <div
+                        class="inline-flex rounded-full bg-slate-900/80 p-1 text-xs sm:text-sm border border-slate-700/70 shadow-sm">
+                        <a href="/ui/sats"
+                            class="px-3 sm:px-4 py-1.5 rounded-full font-medium text-slate-200 hover:text-slate-50 hover:bg-slate-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-colors">
+                            Satelliten
+                        </a>
+                        <a href="/ui/services" aria-current="page"
+                            class="px-3 sm:px-4 py-1.5 rounded-full font-semibold bg-slate-50 text-slate-900 shadow-sm ring-1 ring-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-colors">
+                            Services
+                        </a>
+                        <a href="/ui/spoofing"
+                            class="px-3 sm:px-4 py-1.5 rounded-full font-medium text-slate-200 hover:text-slate-50 hover:bg-slate-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-colors">
+                            Spoofing
+                        </a>
+                        <a href="/ui/groups"
+                            class="px-3 sm:px-4 py-1.5 rounded-full font-medium text-slate-200 hover:text-slate-50 hover:bg-slate-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-colors">
+                            Groups
+                        </a>
+                    </div>
+                </nav>
+            </div>
+        </header>
+
+        <!-- MAIN -->
+        <main class="flex-1" role="main">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+                <!-- Hauptkarte / Layout-Container -->
+                <section
+                    class="bg-white/95 text-slate-900 shadow-xl shadow-slate-900/10 rounded-2xl border border-slate-200/70 p-6 sm:p-8"
+                    aria-labelledby="services-heading">
+                    <!-- Headline + Sat selection -->
+                    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 mb-8">
+                        <div class="space-y-4 max-w-xl">
+                            <div>
+                                <h1 id="services-heading"
+                                    class="text-lg sm:text-xl font-semibold text-slate-900 tracking-tight">
+                                    Services
+                                </h1>
+                                <p class="mt-1 text-xs sm:text-sm text-slate-500">
+                                    Gemeldete mDNS-/Bonjour-Services, gruppiert nach Service-Typ.
+                                </p>
+                            </div>
+
+                            <!-- Sat Auswahl -->
+                            <section aria-label="Satellitenauswahl"
+                                class="inline-flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3">
+                                <div class="mt-0.5">
+                                    <span
+                                        class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-slate-50 text-[0.65rem] font-semibold">
+                                        Sat
+                                    </span>
+                                </div>
+                                <div class="flex flex-col gap-1.5 text-xs sm:text-sm">
+                                    <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                                        <label for="satSelect"
+                                            class="text-[0.7rem] sm:text-xs font-semibold tracking-wide text-slate-600 uppercase">
+                                            Satellit
+                                        </label>
+                                        <select id="satSelect" name="satSelect"
+                                            class="w-full sm:w-64 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition">
+                                            <!-- Optionen werden per JavaScript aus /api/v1/satellites befüllt -->
+                                        </select>
+                                    </div>
+                                    <p class="flex items-center gap-1.5 text-[0.7rem] sm:text-xs text-slate-500">
+                                        <span
+                                            class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 text-[0.6rem] font-semibold text-slate-700">i</span>
+                                        <span>Es werden maximal die letzten 200 Services pro Sat angezeigt.</span>
+                                    </p>
+                                </div>
+                            </section>
+                        </div>
+
+                        <!-- Header-Zähler -->
+                        <div class="flex flex-col items-end gap-2 text-right">
+                            <div class="flex flex-col items-end gap-1 text-[0.7rem] sm:text-xs text-slate-500">
+                                <p>
+                                    Aktueller Sat:
+                                    <span
+                                        id="headerCurrentSatLabel"
+                                        class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 font-medium text-slate-800">
+                                        alle
+                                    </span>
+                                </p>
+                                <p>
+                                    Gesamt erfasste Instanzen:
+                                    <span
+                                        class="inline-flex items-center rounded-full bg-slate-900 text-slate-50 px-2.5 py-0.5 text-[0.7rem] font-semibold">
+                                        <span id="headerServiceCount">0</span>
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+
+<!-- FILTERS – control panel -->
+<section
+    class="mb-6 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-4 sm:px-5 sm:py-4"
+    aria-label="Service-Filter">
+
+    <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+
+        <!-- LINKER BLOCK: Service-Typ + Suche -->
+        <div class="flex-1 grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.6fr)]">
+            <div>
+                <label for="serviceTypeSearchInput"
+                       class="block text-[0.7rem] font-semibold tracking-wide text-slate-600 mb-1 uppercase">
+                    Service-Typen
+                </label>
+                <div class="space-y-2">
+                    <div id="serviceTypeCombobox"
+                         class="rounded-xl border border-slate-300 bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-sky-500 focus-within:border-sky-500 transition">
+                        <div id="serviceTypeSelectedChips" class="flex flex-wrap gap-1.5"></div>
+                        <input id="serviceTypeSearchInput" type="text" autocomplete="off"
+                               placeholder="Service-Typ hinzufügen"
+                               class="mt-2 w-full border-0 bg-transparent px-0 py-0 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0" />
+                    </div>
+                    <div id="serviceTypeDropdown"
+                         class="service-type-dropdown max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg"
+                         hidden></div>
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <p id="serviceTypeFilterHint" class="text-[0.7rem] sm:text-xs text-slate-500">
+                            Leere Include-Liste zeigt alle Services.
+                        </p>
+                        <button id="saveServiceFilterDefaults" type="button"
+                                class="inline-flex items-center gap-1 rounded-full border border-sky-600 px-3 py-1.5 text-[0.7rem] sm:text-xs bg-sky-600 text-white hover:bg-sky-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <span>Defaults speichern</span>
+                        </button>
+                    </div>
+                    <p id="serviceFilterSaveStatus" class="hidden text-[0.7rem] sm:text-xs"></p>
+                </div>
+            </div>
+
+            <div>
+                <label for="searchInput"
+                       class="block text-[0.7rem] font-semibold tracking-wide text-slate-600 mb-1 uppercase">
+                    Suche
+                </label>
+                <input id="searchInput" type="text" autocomplete="off"
+                       placeholder="Instance, Service, Host, IP oder Name"
+                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition" />
+            </div>
+        </div>
+
+        <!-- RECHTER BLOCK: Status, Count, Spoofing, Reset -->
+        <div class="w-full xl:w-auto flex flex-col gap-3">
+
+            <!-- Status-Buttons -->
+            <div class="flex items-center justify-between gap-3">
+                <span class="text-[0.7rem] sm:text-xs font-semibold tracking-wide text-slate-600 uppercase">
+                    Status
+                </span>
+                <div
+                    class="inline-flex rounded-full border border-slate-300 bg-white/90 p-0.5 text-[0.7rem] sm:text-xs shadow-sm">
+                    <button type="button"
+                            class="px-2.5 py-1 rounded-full border bg-slate-900 text-slate-50 border-slate-900"
+                            data-status-filter="">
+                        Alle
+                    </button>
+                    <button type="button"
+                            class="px-2.5 py-1 rounded-full border bg-slate-100 text-slate-700 border-slate-300"
+                            data-status-filter="online">
+                        Online
+                    </button>
+                    <button type="button"
+                            class="px-2.5 py-1 rounded-full border bg-slate-100 text-slate-700 border-slate-300"
+                            data-status-filter="offline">
+                        Offline
+                    </button>
+                    <button type="button"
+                            class="px-2.5 py-1 rounded-full border bg-slate-100 text-slate-700 border-slate-300"
+                            data-status-filter="config-only">
+                        Nur konfiguriert
+                    </button>
+                </div>
+            </div>
+
+            <!-- Count + Spoofing + Reset -->
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <p id="serviceCount"
+                   class="text-xs sm:text-sm text-slate-600 whitespace-nowrap rounded-full bg-white px-3 py-1 border border-slate-200">
+                    &nbsp;
+                </p>
+
+                <div class="flex items-center gap-2">
+                    <label
+                        class="flex items-center gap-2 rounded-full border border-slate-300 bg-white/80 px-3 py-1.5 text-[0.7rem] sm:text-xs text-slate-700 shadow-sm cursor-pointer">
+                        <input id="filterSpoofOnly" type="checkbox"
+                               class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                        <span class="font-medium">nur Spoofing</span>
+                    </label>
+
+                    <button id="resetFilters" type="button"
+                            class="inline-flex items-center gap-1 rounded-full border border-slate-300 px-3 py-1.5 text-[0.7rem] sm:text-xs bg-white hover:bg-slate-50 text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-400">
+                        <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" aria-hidden="true">
+                            <path d="M5 6h10M5 10h6M5 14h4" stroke="currentColor" stroke-width="1.5"
+                                  stroke-linecap="round" />
+                        </svg>
+                        <span>Filter zurücksetzen</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>                    
+
+
+                    <!-- SERVICE GROUPS -->
+                    <section id="serviceGroupsContainer" class="mt-2 space-y-4" aria-live="polite"
+                        aria-label="Service-Gruppen">
+                    </section>
+
+                    <!-- Keine Treffer -->
+                    <p id="emptyState"
+                        class="hidden mt-6 text-sm text-slate-500 text-center border border-dashed border-slate-200 rounded-xl py-6">
+                        Keine Services gefunden. Passe Filter oder Suche an.
+                    </p>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Detail-Overlay / Modal -->
+    <div id="detailOverlay"
+        class="fixed inset-0 z-40 hidden bg-black/50 backdrop-blur-sm items-center justify-center p-3 sm:p-4"
+        role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+        <div
+            class="w-full max-w-4xl max-h-[90vh] overflow-hidden bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-slate-200 bg-slate-50/70">
+                <div>
+                    <h2 id="detailTitle" class="text-base sm:text-lg font-semibold text-slate-900 truncate">Details</h2>
+                    <p class="mt-0.5 text-[0.7rem] text-slate-500">Instanz-Details und Spoofing-Konfiguration</p>
+                </div>
+                <button type="button" onclick="closeDetail()"
+                    class="rounded-full p-1.5 text-slate-500 hover:bg-slate-200/80 hover:text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
+                    aria-label="Detailansicht schließen">
+                    <svg class="h-4 w-4" viewBox="0 0 20 20" aria-hidden="true">
+                        <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.5"
+                            stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Tabs -->
+            <div class="px-4 sm:px-6 pt-3 border-b border-slate-200 bg-slate-50/70">
+                <div class="inline-flex items-center gap-1 rounded-full bg-white/70 p-1 shadow-inner text-xs sm:text-sm"
+                    role="tablist" aria-label="Detailansicht Tabs">
+                    <button id="detailTabOverview" type="button"
+                        class="detail-tab bg-slate-900 text-slate-50 text-[0.75rem] font-medium shadow-sm" role="tab"
+                        aria-selected="true" aria-controls="detailTabContentOverview">
+                        Übersicht
+                    </button>
+                    <button id="detailTabSpoof" type="button"
+                        class="detail-tab text-[0.75rem] font-medium text-slate-600 hover:bg-slate-100" role="tab"
+                        aria-selected="false" aria-controls="detailTabContentSpoof">
+                        Spoofing
+                    </button>
+                    <button id="detailTabTxt" type="button"
+                        class="detail-tab text-[0.75rem] font-medium text-slate-600 hover:bg-slate-100" role="tab"
+                        aria-selected="false" aria-controls="detailTabContentTxt">
+                        TXT
+                    </button>
+                    <button id="detailTabRaw" type="button"
+                        class="detail-tab text-[0.75rem] font-medium text-slate-600 hover:bg-slate-100" role="tab"
+                        aria-selected="false" aria-controls="detailTabContentRaw">
+                        Raw
+                    </button>
+                </div>
+            </div>
+
+            <!-- Overlay Body -->
+            <div class="px-4 sm:px-6 py-4 text-xs sm:text-sm overflow-y-auto bg-white">
+                <!-- TAB: Übersicht -->
+                <section id="detailTabContentOverview" class="space-y-4" role="tabpanel"
+                    aria-labelledby="detailTabOverview">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <h3 class="text-[0.65rem] uppercase tracking-wide text-slate-500 mb-1">Instance</h3>
+                            <p id="detailInstance" class="font-mono text-slate-900 break-all"></p>
+                        </div>
+                        <div>
+                            <h3 class="text-[0.65rem] uppercase tracking-wide text-slate-500 mb-1">Service</h3>
+                            <p id="detailService" class="font-mono text-slate-900 break-all"></p>
+                        </div>
+                        <div>
+                            <h3 class="text-[0.65rem] uppercase tracking-wide text-slate-500 mb-1">Hostname</h3>
+                            <p id="detailHostname" class="font-mono text-slate-900 break-all"></p>
+                        </div>
+                        <div>
+                            <h3 class="text-[0.65rem] uppercase tracking-wide text-slate-500 mb-1">Last Seen</h3>
+                            <p id="detailLastSeen" class="font-mono text-slate-900"></p>
+                        </div>
+                        <div>
+                            <h3 class="text-[0.65rem] uppercase tracking-wide text-slate-500 mb-1">Sat</h3>
+                            <p id="detailSatId" class="font-mono text-slate-900"></p>
+                        </div>
+                        <div>
+                            <h3 class="text-[0.65rem] uppercase tracking-wide text-slate-500 mb-1">Spoofing-Status
+                            </h3>
+                            <p id="detailSpoofStatus" class="font-mono text-slate-900"></p>
+                            <p id="detailSpoofTargets"
+                                class="font-mono text-slate-700 text-[0.7rem] mt-1 whitespace-pre-wrap break-words">
+                            </p>
+                        </div>
+                        <div>
+                            <h3 class="text-[0.65rem] uppercase tracking-wide text-slate-500 mb-1">IPs</h3>
+                            <p id="detailIPs" class="font-mono text-slate-900 break-all"></p>
+                        </div>
+                        <div>
+                            <h3 class="text-[0.65rem] uppercase tracking-wide text-slate-500 mb-1">Port</h3>
+                            <p id="detailPort" class="font-mono text-slate-900 break-all"></p>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <h3 class="text-[0.65rem] uppercase tracking-wide text-slate-500 mb-1">
+                                Identity (Vendor / Model / Name)
+                            </h3>
+                            <p id="detailIdentity" class="font-mono text-slate-900 break-all text-[0.7rem]"></p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB: Spoofing mit Target-Editor -->
+                <section id="detailTabContentSpoof" class="space-y-4 hidden" role="tabpanel"
+                    aria-labelledby="detailTabSpoof">
+                    <div class="space-y-1">
+                        <h3 class="text-[0.65rem] uppercase tracking-wide text-slate-500 mb-1">Service</h3>
+                        <p id="spoofServiceLabel" class="font-mono text-slate-900 break-all"></p>
+                        <p id="spoofServiceKeyLabel" class="font-mono text-[0.7rem] text-slate-500 break-all mt-1"></p>
+                    </div>
+
+                    <div class="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 border border-slate-200">
+                        <input id="spoofEnabled" type="checkbox"
+                            class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                            role="switch" aria-checked="false"
+                            aria-label="Spoofing für diese Instanz aktivieren oder deaktivieren" />
+                        <label for="spoofEnabled" class="text-xs sm:text-sm text-slate-800">
+                            Spoofing für diese Instanz aktivieren
+                        </label>
+                    </div>
+
+                    <div class="pt-1 space-y-1">
+                        <div class="flex items-center justify-between mb-1">
+                            <h3 class="text-[0.65rem] uppercase tracking-wide text-slate-500">Targets</h3>
+                            <button type="button" onclick="addSpoofTargetRow()"
+                                class="inline-flex items-center rounded-lg border border-slate-300
+                                           px-2.5 py-1.5 text-[0.7rem] sm:text-xs text-slate-700 bg-white hover:bg-slate-50 shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-400">
+                                <span class="text-base leading-none mr-1">+</span>
+                                Target hinzufügen
+                            </button>
+                        </div>
+                        <p class="text-[0.7rem] sm:text-xs text-slate-500 mb-2">
+                            Wähle pro Zeile Sat und Interfaces (mehrfach möglich).
+                            Leere Zeilen werden ignoriert.
+                        </p>
+                    </div>
+
+                    <div id="spoofTargetsContainer" class="space-y-2"></div>
+
+                    <div id="spoofError"
+                        class="hidden text-[0.7rem] sm:text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 flex items-start gap-2"
+                        role="alert">
+                        <span class="mt-[2px] text-red-500">!</span>
+                        <span></span>
+                    </div>
+
+                    <div id="spoofSuccess"
+                        class="hidden text-[0.7rem] sm:text-xs text-emerald-800 bg-emerald-50 border-emerald-200 border rounded-lg px-3 py-2 flex items-start gap-2"
+                        role="status" aria-live="polite">
+                        <span class="mt-[2px] text-emerald-500">✓</span>
+                        <span></span>
+                    </div>
+
+                    <div class="flex justify-end pt-1">
+                        <button id="spoofSaveButton" onclick="saveSpoofConfig()"
+                            class="rounded-lg border border-emerald-600 px-3.5 py-1.5 text-xs sm:text-sm font-medium
+                                       text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60 disabled:cursor-wait">
+                            Speichern
+                        </button>
+                    </div>
+                </section>
+
+                <!-- TAB: TXT -->
+                <section id="detailTabContentTxt" class="space-y-4 hidden" role="tabpanel"
+                    aria-labelledby="detailTabTxt">
+                    <div>
+                        <h3 class="text-[0.65rem] uppercase tracking-wide text-slate-500 mb-1">
+                            TXT Records
+                        </h3>
+                        <div id="detailTxt"
+                            class="text-[0.7rem] sm:text-xs font-mono bg-slate-50 border border-slate-200
+                                    rounded-lg px-3 py-2 whitespace-pre-wrap break-words text-slate-800 max-h-[60vh] overflow-y-auto">
+                            –
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB: Raw -->
+                <section id="detailTabContentRaw" class="space-y-4 hidden" role="tabpanel"
+                    aria-labelledby="detailTabRaw">
+                    <div>
+                        <h3 class="text-[0.65rem] uppercase tracking-wide text-slate-500 mb-1">Raw Object</h3>
+                        <pre id="detailRaw"
+                            class="bg-slate-50 border border-slate-200 rounded-lg p-2 text-[0.65rem] text-slate-800 sm:text-xs font-mono overflow-x-auto max-h-[60vh] overflow-y-auto"></pre>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Detail Footer -->
+            <div
+                class="px-4 sm:px-6 py-3 border-t border-slate-200 flex flex-col sm:flex-row sm:justify-between gap-2 bg-slate-50/70">
+                <div class="text-[0.7rem] sm:text-xs text-slate-400 flex items-center gap-2">
+                    <span class="text-slate-500">Service-Key:</span>
+                    <span id="detailServiceKeyHint" class="font-mono truncate"></span>
+                </div>
+                <div class="flex justify-end">
+                    <button type="button" onclick="closeDetail()"
+                        class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-400">
+                        Schließen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    /* ---------------------------
+       Globale Variablen / Config
+    ----------------------------*/
+    let allServices = [];
+    const SPOOF_API_BASE = "/api/v1/services/";
+    const SERVICE_FILTERS_API = "/api/v1/ui/service-filters";
+    const COLLAPSE_LS_KEY = "msa_service_collapse_state";
+    const FILTER_LS_KEY = "msa_service_filter_state_v2";
+
+    const SATS_SUMMARY = "/api/v1/satellites/";
+    let satsMeta = [];
+    let uiServiceFilterConfig = null;
+    let activeIncludeServiceTypes = [];
+
+    let currentDetailObj = null;
+    let currentDetailTab = "overview";
+    let lastFocusedElement = null;
+
+    // Debounce für Suche
+    let searchDebounceTimer = null;
+    const SEARCH_DEBOUNCE_MS = 180;
+
+    /* ---------------------------
+        Helper
+    ----------------------------*/
+
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    function escapeAttr(str) {
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/"/g, "&quot;");
+    }
+
+    /**
+     * Liefert:
+     *  - html: fertiges HTML (Spans etc.)
+     *  - aria: kompletter Text für aria-label / title
+     */
+    function formatInstanceLabel(instanceName) {
+        if (!instanceName) {
+            return {
+                html: "–",
+                aria: "–"
+            };
+        }
+
+        // Service-Typ abschneiden
+        const typeIdx = instanceName.indexOf("._");
+        let raw = typeIdx > -1 ? instanceName.slice(0, typeIdx) : instanceName;
+
+        // 🔧 Spezialfall: Sonos / RINCON_…@Raumname
+        if (raw.startsWith("RINCON_")) {
+            const atIdx = raw.indexOf("@");
+            if (atIdx !== -1) {
+                const left = raw.slice(0, atIdx + 1);          // inkl. "@"
+                let right = raw.slice(atIdx + 1).trimStart();  // Raumname
+
+                const MAX_RIGHT = 40; // Raumname begrenzen
+                if (right.length > MAX_RIGHT) {
+                    right = right.slice(0, MAX_RIGHT - 1) + "…";
+                }
+
+                return {
+                    html:
+                        `<span class="block whitespace-nowrap">${escapeHtml(left)}</span>` +
+                        `<span class="block break-words">${escapeHtml(right)}</span>`,
+                    // Screenreader / Tooltip bekommen den kompletten String
+                    aria: raw
+                };
+            }
+        }
+
+        // 🔧 Standardfall: alles andere (amzn.dmgr, Apple-Kram, usw.)
+        const MAX_LEN = 40;          // hier jetzt bewusst kürzer
+        let display = raw;
+        let aria = raw;              // komplettes Label für Tooltip/Aria
+
+        if (display.length > MAX_LEN) {
+            display = display.slice(0, MAX_LEN - 1) + "…";
+        }
+
+        return {
+            html: escapeHtml(display),
+            aria
+        };
+    }
+
+
+
+    function shorten(t, max = 40) {
+        if (!t) return "–";
+        if (t.length <= max) return t;
+        return t.slice(0, max - 1) + "…";
+    }
+
+    function normalizeServiceTypeList(values) {
+        if (!Array.isArray(values)) return [];
+        const seen = new Set();
+        const normalized = [];
+
+        values.forEach(value => {
+            const name = String(value || "").trim();
+            if (!name || seen.has(name)) return;
+            seen.add(name);
+            normalized.push(name);
+        });
+
+        return normalized;
+    }
+
+    function isoToDate(s) {
+        if (!s) return null;
+        if (typeof s === "object" && s !== null && s.time) s = s.time;
+        if (typeof s !== "string") return null;
+        s = s.trim();
+        if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
+        if (s.includes(".")) {
+            const parts = s.split(".");
+            const secondPart = parts.slice(1).join(".");
+            const tzIndex = secondPart.search(/[+-]/);
+            s = tzIndex >= 0 ? parts[0] + secondPart.slice(tzIndex) : parts[0];
+        }
+        const d = new Date(s);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    function formatLocal(val) {
+        const d = isoToDate(val);
+        if (!d) return "–";
+        return d.toLocaleString("de-DE", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit"
+        });
+    }
+
+    // aus einem Service-Item den Sat extrahieren
+    function getServiceSatId(item) {
+        if (!item) return "";
+        if (item.source_sat) return item.source_sat;
+        if (item.service && item.service.source_sat) return item.service.source_sat;
+        if (item.service && item.service.sat_id) return item.service.sat_id;
+        return "";
+    }
+
+    // ---------------------------
+    // Service-Status (online/offline/konfig-only)
+    // ---------------------------
+    let statusFilter = ""; // "", "online", "offline", "config-only"
+
+    function getServiceStatus(item) {
+        const meta = item.meta || {};
+        const online = !!meta.online;
+        const s = item.service || {};
+        const lastSeen = s.last_seen;
+
+        if (online) {
+            return "online";
+        }
+        if (lastSeen) {
+            return "offline";
+        }
+        return "config-only";
+    }
+
+    function getStatusMeta(status) {
+        switch (status) {
+            case "online":
+                return {
+                    label: "Online",
+                    tooltip: "Zuletzt von einem Sat als aktiv gemeldet.",
+                    dotClass: "h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_2px_rgba(16,185,129,0.35)]"
+                };
+            case "offline":
+                return {
+                    label: "Offline",
+                    tooltip: "Früher gesehen, aktuell von keinem Sat gemeldet.",
+                    dotClass: "h-2 w-2 rounded-full bg-rose-500"
+                };
+            case "config-only":
+            default:
+                return {
+                    label: "Konfig",
+                    tooltip: "Nur in Spoofing-Konfiguration vorhanden, noch nie live gesehen.",
+                    dotClass: "h-2 w-2 rounded-full bg-slate-400"
+                };
+        }
+    }
+
+    function updateStatusFilterButtons() {
+        const buttons = document.querySelectorAll("[data-status-filter]");
+        buttons.forEach(btn => {
+            const val = btn.getAttribute("data-status-filter") || "";
+            const active = (val === statusFilter);
+
+            btn.classList.toggle("bg-slate-900", active);
+            btn.classList.toggle("text-slate-50", active);
+            btn.classList.toggle("border-slate-900", active);
+
+            btn.classList.toggle("bg-slate-100", !active);
+            btn.classList.toggle("text-slate-700", !active);
+            btn.classList.toggle("border-slate-300", !active);
+
+            btn.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+    }
+
+    function setStatusFilter(value) {
+        statusFilter = value || "";
+        updateStatusFilterButtons();
+        renderServiceGroups();
+        saveFilterState();
+    }
+
+    /* ---------------------------
+        Filter-Persistenz (localStorage)
+    ----------------------------*/
+    function loadFilterState() {
+        try {
+            const raw = localStorage.getItem(FILTER_LS_KEY);
+            if (!raw) return {};
+            const parsed = JSON.parse(raw);
+            return (parsed && typeof parsed === "object") ? parsed : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function saveFilterState() {
+        try {
+            const searchInput = document.getElementById("searchInput");
+            const filterSpoofOnly = document.getElementById("filterSpoofOnly");
+            const satSelect = document.getElementById("satSelect");
+
+            const state = {
+                search:       searchInput ? searchInput.value : "",
+                spoofOnly:    filterSpoofOnly ? !!filterSpoofOnly.checked : false,
+                sat:          satSelect ? satSelect.value : "",
+                statusFilter: statusFilter || ""
+            };
+
+            localStorage.setItem(FILTER_LS_KEY, JSON.stringify(state));
+        } catch (e) {
+            // best effort, Fehler hier sind nicht kritisch
+        }
+    }
+
+    function applySavedFilters() {
+        const state = loadFilterState();
+
+        const searchInput = document.getElementById("searchInput");
+        const filterSpoofOnly = document.getElementById("filterSpoofOnly");
+        const satSelect = document.getElementById("satSelect");
+        const headerLabel = document.getElementById("headerCurrentSatLabel");
+
+        // Suche
+        if (searchInput && typeof state.search === "string") {
+            searchInput.value = state.search;
+        }
+
+        // "nur Spoofing"
+        if (filterSpoofOnly) {
+            filterSpoofOnly.checked = !!state.spoofOnly;
+        }
+
+        // Sat-Filter
+        if (satSelect && state.sat) {
+            if ([...satSelect.options].some(o => o.value === state.sat)) {
+                satSelect.value = state.sat;
+            }
+        }
+
+        // Statusfilter (online/offline/config-only)
+        if (typeof state.statusFilter === "string") {
+            statusFilter = state.statusFilter;
+        }
+        updateStatusFilterButtons();
+
+        // Header-Label aktualisieren
+        if (headerLabel && satSelect) {
+            headerLabel.textContent = satSelect.value || "alle";
+        }
+    }
+
+
+    /* ---------------------------
+        Collapse state
+    ----------------------------*/
+    function loadCollapseState() {
+        try {
+            const raw = localStorage.getItem(COLLAPSE_LS_KEY);
+            if (!raw) return {};
+            const parsed = JSON.parse(raw);
+            return parsed && typeof parsed === "object" ? parsed : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function isGroupCollapsed(serviceName, defaultVal = false) {
+        const state = loadCollapseState();
+        if (Object.prototype.hasOwnProperty.call(state, serviceName)) {
+            return !!state[serviceName];
+        }
+        return defaultVal;
+    }
+
+    function setGroupCollapsed(serviceName, collapsed) {
+        const state = loadCollapseState();
+        state[serviceName] = !!collapsed;
+        try {
+            localStorage.setItem(COLLAPSE_LS_KEY, JSON.stringify(state));
+        } catch (e) { }
+    }
+
+    function toggleServiceGroup(serviceName) {
+        const current = isGroupCollapsed(serviceName, false);
+        setGroupCollapsed(serviceName, !current);
+        renderServiceGroups();
+    }
+
+    /* ---------------------------
+        SAT-Meta / Interfaces / Targets
+    ----------------------------*/
+    function normalizeIfaceList(ifaceField) {
+        if (!ifaceField) return [];
+        if (Array.isArray(ifaceField)) {
+            return ifaceField.map(v => String(v).trim()).filter(v => v.length > 0);
+        }
+        if (typeof ifaceField === "string") {
+            return ifaceField.split(",").map(v => v.trim()).filter(v => v.length > 0);
+        }
+        return [];
+    }
+
+    function findSatMeta(satId) {
+        if (!Array.isArray(satsMeta)) return null;
+        return satsMeta.find(s => s.sat_id === satId) || null;
+    }
+
+    function renderInterfacesForRow(rowEl, satId, selectedIfs) {
+        const container = rowEl.querySelector(".target-ifaces");
+        if (!container) return;
+        container.innerHTML = "";
+
+        const meta = findSatMeta(satId);
+        if (!meta || !Array.isArray(meta.interfaces) || meta.interfaces.length === 0) {
+            const info = document.createElement("div");
+            info.className = "text-[0.65rem] text-slate-400 italic";
+            info.textContent = "Keine Interface-Infos vorhanden.";
+            container.appendChild(info);
+            return;
+        }
+
+        const selectedSet = new Set(selectedIfs || []);
+
+        meta.interfaces.forEach(ifMeta => {
+            const isMgmt = meta.mgmt_interface && meta.mgmt_interface === ifMeta.name;
+            const labelText = isMgmt ? `${ifMeta.name} (Mgmt)` : ifMeta.name;
+
+            const label = document.createElement("label");
+            label.className =
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[0.7rem] sm:text-xs " +
+                "cursor-pointer select-none " +
+                (selectedSet.has(ifMeta.name)
+                    ? "bg-slate-900 text-slate-50 border-slate-900"
+                    : "bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100");
+
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.value = ifMeta.name;
+            checkbox.className = "target-iface-checkbox h-3.5 w-3.5 rounded border-slate-300 text-slate-900";
+            checkbox.checked = selectedSet.has(ifMeta.name);
+
+            checkbox.addEventListener("change", () => {
+                if (checkbox.checked) {
+                    label.classList.remove("bg-slate-50", "text-slate-700", "border-slate-300", "hover:bg-slate-100");
+                    label.classList.add("bg-slate-900", "text-slate-50", "border-slate-900");
+                } else {
+                    label.classList.add("bg-slate-50", "text-slate-700", "border-slate-300", "hover:bg-slate-100");
+                    label.classList.remove("bg-slate-900", "text-slate-50", "border-slate-900");
+                }
+            });
+
+            const span = document.createElement("span");
+            span.textContent = labelText;
+
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            container.appendChild(label);
+        });
+    }
+
+    function groupTargetsForOverlay(targets) {
+        const groupsMap = new Map();
+        if (!Array.isArray(targets)) return [];
+
+        targets.forEach(t => {
+            const satId = t.sat_id || "";
+            const ifaceList = normalizeIfaceList(t.iface);
+            const key = satId;
+
+            let g = groupsMap.get(key);
+            if (!g) {
+                g = { satId, ifaces: [] };
+                groupsMap.set(key, g);
+            }
+
+            ifaceList.forEach(ifName => {
+                if (ifName && !g.ifaces.includes(ifName)) {
+                    g.ifaces.push(ifName);
+                }
+            });
+        });
+
+        return Array.from(groupsMap.values()).map(g => ({
+            satId: g.satId,
+            ifaces: g.ifaces
+        }));
+    }
+
+    function buildTargetsLabel(targets) {
+        if (!Array.isArray(targets) || targets.length === 0) return "";
+        return targets.map(t => {
+            const parts = [];
+            if (t.sat_id) parts.push(t.sat_id);
+            const ifaces = normalizeIfaceList(t.iface);
+            if (ifaces.length > 0) parts.push("IF " + ifaces.join(", "));
+            if (Array.isArray(t.vlans) && t.vlans.length > 0) parts.push("VLANs " + t.vlans.join(","));
+            return parts.join(" · ");
+        }).join(" | ");
+    }
+
+    async function loadSatsMeta() {
+        try {
+            const resp = await fetch(SATS_SUMMARY, { method: "GET" });
+            if (!resp.ok) {
+                console.error("Fehler beim Laden der Sat-Summary:", resp.status);
+                satsMeta = [];
+                return;
+            }
+            const data = await resp.json();
+            satsMeta = Array.isArray(data) ? data : [];
+        } catch (e) {
+            console.error("Unerwarteter Fehler beim Laden der Sat-Summary:", e);
+            satsMeta = [];
+        } finally {
+            // nachdem Sat-Meta da ist, Filter-Optionen ggf. aktualisieren
+            initSatFilterOptions();
+        }
+    }
+
+    /* ---------------------------
+        Tabs im Detail-Overlay
+    ----------------------------*/
+    function setDetailTab(tabName) {
+        currentDetailTab = tabName;
+        const allTabs = ["overview", "spoof", "txt", "raw"];
+        allTabs.forEach(name => {
+            const content = document.getElementById("detailTabContent" + name.charAt(0).toUpperCase() + name.slice(1));
+            const btn = document.getElementById("detailTab" + name.charAt(0).toUpperCase() + name.slice(1));
+            if (!content || !btn) return;
+            const isActive = name === tabName;
+            content.classList.toggle("hidden", !isActive);
+            btn.classList.toggle("bg-slate-900", isActive);
+            btn.classList.toggle("text-slate-50", isActive);
+            btn.classList.toggle("active", isActive);
+            btn.classList.toggle("shadow-sm", isActive);
+            btn.classList.toggle("text-slate-600", !isActive);
+            btn.setAttribute("aria-selected", isActive ? "true" : "false");
+        });
+    }
+
+    /* ---------------------------
+        Detail Overlay
+    ----------------------------*/
+    function showDetailFor(obj) {
+        const s = obj.service || {};
+
+        document.getElementById("detailTitle").textContent =
+            s.hostname || s.instance_name || "Details";
+        document.getElementById("detailInstance").textContent =
+            s.instance_name || "–";
+        document.getElementById("detailService").textContent =
+            s.service_name || "–";
+        document.getElementById("detailHostname").textContent =
+            s.hostname || "–";
+        document.getElementById("detailLastSeen").textContent =
+            formatLocal(s.last_seen);
+
+        const satId = getServiceSatId(obj) || "–";
+        document.getElementById("detailSatId").textContent = satId;
+
+        document.getElementById("detailIPs").textContent =
+            (s.addresses && s.addresses.length) ? s.addresses.join(", ") : "–";
+        document.getElementById("detailPort").textContent =
+            (s.port !== undefined && s.port !== null) ? s.port : "–";
+
+        document.getElementById("detailTxt").textContent =
+            (s.txt && s.txt.length) ? s.txt.join("\n") : "–";
+
+        // ---- Identity + MAC-Zeile ----
+        const meta = obj.meta || {};
+        const norm = meta.normalized || {};
+        const identity = norm.identity || {};
+
+        const mac = (s.mac || "").toLowerCase();
+        const vendor = identity.vendor_display || identity.vendor || "";
+        const model = identity.model_display || identity.model || "";
+        const friendlyName = identity.friendly_name || "";
+
+        const idParts = [];
+        if (mac) idParts.push(`MAC=${mac}`);
+        if (vendor) idParts.push(`Vendor=${vendor}`);
+        if (model) idParts.push(`Model=${model}`);
+        if (friendlyName) idParts.push(`Name=${friendlyName}`);
+
+        document.getElementById("detailIdentity").textContent =
+            idParts.length ? idParts.join(" | ") : "–";
+
+        // ---- Spoof-Infos ----
+        const statusEl = document.getElementById("detailSpoofStatus");
+        const targetsEl = document.getElementById("detailSpoofTargets");
+        const keyHint = document.getElementById("detailServiceKeyHint");
+
+        statusEl.textContent = obj.spoof_enabled ? "Spoofing aktiv" : "Spoofing inaktiv";
+
+        const tLabel = buildTargetsLabel(obj.spoof_targets || []);
+        targetsEl.textContent = tLabel || "keine Spoof-Targets";
+
+        if (keyHint) {
+            keyHint.textContent = obj.service?.instance_name || "";
+        }
+
+        document.getElementById("detailRaw").textContent = JSON.stringify(obj, null, 2);
+    }
+
+    function openDetailByKey(key, tabName) {
+        const obj = allServices.find(x => x.service_key === key);
+        if (!obj) return;
+        currentDetailObj = obj;
+
+        lastFocusedElement = document.activeElement;
+
+        showDetailFor(obj);
+        const overlay = document.getElementById("detailOverlay");
+        overlay.classList.remove("hidden");
+        overlay.classList.add("flex");
+
+        if (tabName === "spoof") {
+            openSpoofEditor();
+        } else {
+            setDetailTab("overview");
+        }
+
+        const closeBtn = overlay.querySelector('button[aria-label="Detailansicht schließen"]');
+        if (closeBtn) closeBtn.focus();
+    }
+
+    function closeDetail() {
+        const overlay = document.getElementById("detailOverlay");
+        overlay.classList.add("hidden");
+        overlay.classList.remove("flex");
+
+        if (lastFocusedElement && typeof lastFocusedElement.focus === "function") {
+            lastFocusedElement.focus();
+        }
+    }
+
+    /* ---------------------------
+        Spoof-Editor im Overlay
+    ----------------------------*/
+    function clearSpoofMessages() {
+        const err = document.getElementById("spoofError");
+        const ok = document.getElementById("spoofSuccess");
+        if (err) {
+            err.classList.add("hidden");
+            const span = err.querySelector("span:last-child");
+            if (span) span.textContent = "";
+        }
+        if (ok) {
+            ok.classList.add("hidden");
+            const span = ok.querySelector("span:last-child");
+            if (span) span.textContent = "";
+        }
+    }
+
+    function addSpoofTargetRow(prefill) {
+        const container = document.getElementById("spoofTargetsContainer");
+        const row = document.createElement("div");
+        row.className = "spoof-target-row target-row border border-slate-200 rounded-xl px-3 py-2 bg-white";
+
+        const defaultSat =
+            (prefill && prefill.satId) ||
+            (currentDetailObj && (getServiceSatId(currentDetailObj) || currentDetailObj.service?.sat_id)) ||
+            (Array.isArray(satsMeta) && satsMeta.length > 0 ? satsMeta[0].sat_id : "") ||
+            currentSatId ||
+            "";
+
+        const ifaces = prefill?.ifaces || [];
+
+        let satOptions = `<option value="">(Sat wählen)</option>`;
+        if (Array.isArray(satsMeta)) {
+            satsMeta.forEach(s => {
+                const label = s.hostname && s.hostname !== s.sat_id
+                    ? `${s.sat_id} (${s.hostname})`
+                    : s.sat_id;
+                const selected = (s.sat_id === defaultSat) ? "selected" : "";
+                satOptions += `<option value="${s.sat_id}" ${selected}>${label}</option>`;
+            });
+        }
+
+        row.innerHTML = `
+      <div class="flex flex-col sm:flex-row gap-3 sm:items-start">
+        <!-- Sat -->
+        <div class="sm:w-56 flex flex-col gap-1">
+          <label class="text-[0.65rem] uppercase tracking-wide text-slate-500">
+            Sat
+          </label>
+          <select class="target-sat w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-[0.75rem] sm:text-xs text-slate-900 shadow-sm focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 focus:outline-none transition">
+                ${satOptions}
+          </select>
+        </div>
+
+        <!-- Interfaces -->
+        <div class="flex-1 flex flex-col gap-1">
+          <label class="text-[0.65rem] uppercase tracking-wide text-slate-500">
+            Interfaces
+          </label>
+          <div class="target-ifaces flex flex-wrap gap-1.5 mt-0.5"></div>
+          <p class="mt-1 text-[0.65rem] text-slate-400">Mehrere Interfaces möglich.</p>
+        </div>
+
+        <!-- Entfernen-Button -->
+        <div class="flex items-start pt-6 sm:pt-7">
+          <button type="button"
+                  class="rounded-full border border-slate-300 text-slate-500 px-2 py-1 text-[0.7rem] sm:text-xs hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                  onclick="removeSpoofTargetRow(this)">
+            ✕
+          </button>
+        </div>
+      </div>
+    `;
+
+        container.appendChild(row);
+
+        const satSelect = row.querySelector(".target-sat");
+        satSelect.addEventListener("change", () => {
+            renderInterfacesForRow(row, satSelect.value, []);
+        });
+
+        renderInterfacesForRow(row, defaultSat, ifaces);
+    }
+
+    function removeSpoofTargetRow(btn) {
+        const row = btn.closest(".spoof-target-row");
+        if (row && row.parentNode) {
+            row.parentNode.removeChild(row);
+        }
+    }
+
+    function openSpoofEditor() {
+        if (!currentDetailObj) return;
+
+        clearSpoofMessages();
+
+        const s = currentDetailObj.service || {};
+        const key = currentDetailObj.service_key || "";
+
+        document.getElementById("spoofServiceLabel").textContent =
+            (s.instance_name || "–") + "  |  " + (s.service_name || "–");
+        document.getElementById("spoofServiceKeyLabel").textContent = key;
+
+        const spoofEnabledEl = document.getElementById("spoofEnabled");
+        const enabled = !!currentDetailObj.spoof_enabled;
+        spoofEnabledEl.checked = enabled;
+        spoofEnabledEl.setAttribute("aria-checked", enabled ? "true" : "false");
+
+        const container = document.getElementById("spoofTargetsContainer");
+        container.innerHTML = "";
+
+        const groups = groupTargetsForOverlay(currentDetailObj.spoof_targets || []);
+        if (groups.length === 0) {
+            addSpoofTargetRow({ satId: getServiceSatId(currentDetailObj) || "", ifaces: [] });
+        } else {
+            groups.forEach(g => addSpoofTargetRow(g));
+        }
+
+        setDetailTab("spoof");
+    }
+
+    function collectSpoofFormData() {
+        const enabled = document.getElementById("spoofEnabled").checked;
+        const note = currentDetailObj?.spoof_note || "";
+
+        const rows = document.querySelectorAll("#spoofTargetsContainer .spoof-target-row");
+        const targets = [];
+
+        rows.forEach(rowEl => {
+            const satEl = rowEl.querySelector(".target-sat");
+            const ifaceEls = rowEl.querySelectorAll(".target-iface-checkbox");
+
+            const satId = (satEl?.value || "").trim();
+
+            const selectedIfs = Array.from(ifaceEls || [])
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+
+            if (!satId && selectedIfs.length === 0) {
+                return;
+            }
+
+            const baseSat = satId || getServiceSatId(currentDetailObj) || currentSatId || "";
+
+            if (selectedIfs.length === 0) {
+                targets.push({
+                    sat_id: baseSat,
+                    use_mgmt: false,
+                    vlans: [],
+                    iface: []
+                });
+            } else {
+                selectedIfs.forEach(ifName => {
+                    targets.push({
+                        sat_id: baseSat,
+                        use_mgmt: false,
+                        vlans: [],
+                        iface: [ifName]
+                    });
+                });
+            }
+        });
+
+        return {
+            spoof_enabled: enabled,
+            spoof_note: note,
+            spoof_targets: targets
+        };
+    }
+
+    async function saveSpoofConfig() {
+        if (!currentDetailObj) return;
+
+        clearSpoofMessages();
+
+        const key = currentDetailObj.service_key || "";
+        if (!key) {
+            const err = document.getElementById("spoofError");
+            if (err) {
+                err.classList.remove("hidden");
+                const span = err.querySelector("span:last-child");
+                if (span) span.textContent = "Kein service_key vorhanden – kann Spoofing nicht speichern.";
+            }
+            return;
+        }
+
+        const payload = collectSpoofFormData();
+        const btn = document.getElementById("spoofSaveButton");
+        btn.disabled = true;
+
+        try {
+            const resp = await fetch(
+                SPOOF_API_BASE + encodeURIComponent(key) + "/spoof",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                }
+            );
+
+            if (!resp.ok) {
+                const text = await resp.text();
+                const err = document.getElementById("spoofError");
+                if (err) {
+                    err.classList.remove("hidden");
+                    const span = err.querySelector("span:last-child");
+                    if (span) span.textContent = `Fehler beim Speichern (${resp.status}): ${text}`;
+                }
+                btn.disabled = false;
+                return;
+            }
+
+            const data = await resp.json();
+
+            const normalized = {
+                spoof_enabled: !!data.enabled,
+                spoof_note: data.note || "",
+                spoof_targets: (data.targets || []).map(t => ({
+                    sat_id: t.sat_id || "",
+                    use_mgmt: !!t.use_mgmt,
+                    vlans: t.vlans || [],
+                    iface: t.iface || null
+                }))
+            };
+
+            const idx = allServices.findIndex(x => x.service_key === key);
+            if (idx >= 0) {
+                allServices[idx].spoof_enabled = normalized.spoof_enabled;
+                allServices[idx].spoof_note = normalized.spoof_note;
+                allServices[idx].spoof_targets = normalized.spoof_targets;
+            }
+
+            currentDetailObj = allServices.find(x => x.service_key === key) || currentDetailObj;
+            showDetailFor(currentDetailObj);
+
+            const ok = document.getElementById("spoofSuccess");
+            if (ok) {
+                ok.classList.remove("hidden");
+                const span = ok.querySelector("span:last-child");
+                if (span) span.textContent = "Spoofing-Konfiguration gespeichert.";
+            }
+            renderServiceGroups();
+        } catch (e) {
+            const err = document.getElementById("spoofError");
+            if (err) {
+                err.classList.remove("hidden");
+                const span = err.querySelector("span:last-child");
+                if (span) span.textContent = "Unerwarteter Fehler beim Speichern: " + e;
+            }
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    /* ---------------------------
+        Inline-Spoof-Toggle
+    ----------------------------*/
+    async function toggleInstanceSpoof(key, enable) {
+        const obj = allServices.find(x => x.service_key === key);
+        if (!obj) return;
+
+        const payload = {
+            spoof_enabled: !!enable,
+            spoof_note: obj.spoof_note || "",
+            spoof_targets: obj.spoof_targets || []
+        };
+
+        try {
+            const resp = await fetch(
+                SPOOF_API_BASE + encodeURIComponent(key) + "/spoof",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                }
+            );
+
+            if (!resp.ok) {
+                console.error("Fehler beim Toggle:", resp.status);
+                alert("Fehler beim Speichern des Spoofing-Status: " + resp.status);
+                return;
+            }
+
+            const data = await resp.json();
+            obj.spoof_enabled = !!data.enabled;
+            obj.spoof_note = data.note || "";
+            obj.spoof_targets = (data.targets || []).map(t => ({
+                sat_id: t.sat_id || "",
+                use_mgmt: !!t.use_mgmt,
+                vlans: t.vlans || [],
+                iface: t.iface || null
+            }));
+
+            if (currentDetailObj && currentDetailObj.service_key === key) {
+                currentDetailObj = obj;
+                showDetailFor(obj);
+            }
+
+            renderServiceGroups();
+        } catch (e) {
+            console.error("Unerwarteter Fehler beim Toggle:", e);
+            alert("Unerwarteter Fehler beim Toggle: " + e);
+        }
+    }
+
+    /* ---------------------------
+        Service-Type Multi-Select
+    ----------------------------*/
+    function getAvailableServiceTypeOptions() {
+        if (!uiServiceFilterConfig || !Array.isArray(uiServiceFilterConfig.available_service_types)) {
+            return [];
+        }
+        return uiServiceFilterConfig.available_service_types;
+    }
+
+    function getServiceTypeOptionLabel(option) {
+        const source = option && option.source ? ` (${option.source})` : "";
+        return `${option.name || ""}${source}`;
+    }
+
+    function updateServiceTypeFilterHint() {
+        const hint = document.getElementById("serviceTypeFilterHint");
+        if (!hint) return;
+
+        if (activeIncludeServiceTypes.length === 0) {
+            hint.textContent = "Leere Include-Liste zeigt alle Services.";
+            return;
+        }
+
+        hint.textContent = `${activeIncludeServiceTypes.length} Include-Typ${activeIncludeServiceTypes.length === 1 ? "" : "en"} aktiv.`;
+    }
+
+    function showServiceFilterSaveStatus(message, kind) {
+        const el = document.getElementById("serviceFilterSaveStatus");
+        if (!el) return;
+
+        el.textContent = message || "";
+        el.classList.remove("hidden", "text-emerald-700", "text-rose-700", "text-slate-500");
+
+        if (kind === "success") {
+            el.classList.add("text-emerald-700");
+        } else if (kind === "error") {
+            el.classList.add("text-rose-700");
+        } else {
+            el.classList.add("text-slate-500");
+        }
+
+        if (!message) {
+            el.classList.add("hidden");
+        }
+    }
+
+    function hideServiceTypeDropdown() {
+        const dropdown = document.getElementById("serviceTypeDropdown");
+        if (dropdown) {
+            dropdown.hidden = true;
+        }
+    }
+
+    function renderServiceTypeSelectedChips() {
+        const container = document.getElementById("serviceTypeSelectedChips");
+        if (!container) return;
+
+        container.innerHTML = "";
+
+        if (activeIncludeServiceTypes.length === 0) {
+            const badge = document.createElement("span");
+            badge.className = "inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[0.7rem] sm:text-xs text-slate-600";
+            badge.textContent = "Alle Service-Typen";
+            container.appendChild(badge);
+            updateServiceTypeFilterHint();
+            return;
+        }
+
+        activeIncludeServiceTypes.forEach(name => {
+            const chip = document.createElement("span");
+            chip.className = "inline-flex items-center gap-1 rounded-full bg-sky-50 border border-sky-200 px-2.5 py-1 text-[0.7rem] sm:text-xs text-sky-900";
+
+            const label = document.createElement("span");
+            label.className = "font-mono";
+            label.textContent = name;
+
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "rounded-full text-sky-700 hover:text-sky-900 focus:outline-none";
+            button.setAttribute("aria-label", `Service-Typ ${name} entfernen`);
+            button.textContent = "×";
+            button.addEventListener("click", () => {
+                removeActiveServiceType(name);
+            });
+
+            chip.appendChild(label);
+            chip.appendChild(button);
+            container.appendChild(chip);
+        });
+
+        updateServiceTypeFilterHint();
+    }
+
+    function renderServiceTypeSuggestions() {
+        const input = document.getElementById("serviceTypeSearchInput");
+        const dropdown = document.getElementById("serviceTypeDropdown");
+        if (!input || !dropdown) return;
+
+        const query = (input.value || "").trim().toLowerCase();
+        const selectedSet = new Set(activeIncludeServiceTypes);
+        const available = getAvailableServiceTypeOptions()
+            .filter(option => option && option.name && !selectedSet.has(option.name))
+            .filter(option => !query || option.name.toLowerCase().includes(query))
+            .sort((a, b) => a.name.localeCompare(b.name));
+
+        dropdown.innerHTML = "";
+
+        if (available.length === 0) {
+            const empty = document.createElement("div");
+            empty.className = "px-3 py-2 text-[0.7rem] sm:text-xs text-slate-500";
+            empty.textContent = "Keine weiteren Service-Typen gefunden.";
+            dropdown.appendChild(empty);
+        } else {
+            available.forEach(option => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-[0.75rem] sm:text-xs text-slate-800 hover:bg-slate-50";
+                button.addEventListener("click", () => {
+                    addActiveServiceType(option.name);
+                });
+
+                const name = document.createElement("span");
+                name.className = "font-mono";
+                name.textContent = option.name;
+
+                const source = document.createElement("span");
+                source.className = "rounded-full bg-slate-100 px-2 py-0.5 text-[0.65rem] text-slate-500";
+                source.textContent = option.source || "available";
+
+                button.appendChild(name);
+                button.appendChild(source);
+                dropdown.appendChild(button);
+            });
+        }
+
+        dropdown.hidden = false;
+    }
+
+    function syncServiceTypeUi() {
+        renderServiceTypeSelectedChips();
+        renderServiceTypeSuggestions();
+    }
+
+    function setActiveServiceTypes(values) {
+        activeIncludeServiceTypes = normalizeServiceTypeList(values);
+        syncServiceTypeUi();
+    }
+
+    function addActiveServiceType(name) {
+        setActiveServiceTypes([...activeIncludeServiceTypes, name]);
+        const input = document.getElementById("serviceTypeSearchInput");
+        if (input) {
+            input.value = "";
+            input.focus();
+        }
+        renderServiceGroups();
+    }
+
+    function removeActiveServiceType(name) {
+        setActiveServiceTypes(activeIncludeServiceTypes.filter(value => value !== name));
+        renderServiceGroups();
+    }
+
+    function applyServiceFilterConfig(config) {
+        uiServiceFilterConfig = config || {
+            include_service_types: [],
+            static_default_service_types: [],
+            observed_service_types: [],
+            available_service_types: [],
+        };
+
+        setActiveServiceTypes(uiServiceFilterConfig.include_service_types || []);
+        showServiceFilterSaveStatus("", "info");
+    }
+
+    async function loadServiceFilterConfig() {
+        const resp = await fetch(SERVICE_FILTERS_API, {
+            method: "GET",
+            headers: { "Accept": "application/json" }
+        });
+
+        if (!resp.ok) {
+            throw new Error("HTTP " + resp.status);
+        }
+
+        const data = await resp.json();
+        applyServiceFilterConfig(data);
+    }
+
+    async function saveServiceFilterDefaults() {
+        const button = document.getElementById("saveServiceFilterDefaults");
+        if (button) button.disabled = true;
+        showServiceFilterSaveStatus("Speichere Default-Filter…", "info");
+
+        try {
+            const resp = await fetch(SERVICE_FILTERS_API, {
+                method: "PUT",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    include_service_types: activeIncludeServiceTypes,
+                }),
+            });
+
+            if (!resp.ok) {
+                const text = await resp.text();
+                throw new Error(`HTTP ${resp.status}: ${text}`);
+            }
+
+            const data = await resp.json();
+            applyServiceFilterConfig(data);
+            showServiceFilterSaveStatus("Default-Filter gespeichert.", "success");
+        } catch (error) {
+            console.error("Fehler beim Speichern der Service-Filter-Defaults:", error);
+            showServiceFilterSaveStatus(`Fehler beim Speichern: ${error}`, "error");
+        } finally {
+            if (button) button.disabled = false;
+        }
+    }
+
+    /* ---------------------------
+        Sat-Filter Dropdown
+    ----------------------------*/
+    function initSatFilterOptions() {
+        const select = document.getElementById("satSelect");
+        if (!select) return;
+
+        const currentValue = select.value || "";
+
+        // Basis: alle vorhandenen Optionen zurücksetzen
+        select.innerHTML = "";
+        const baseOpt = document.createElement("option");
+        baseOpt.value = "";
+        baseOpt.textContent = "alle";
+        select.appendChild(baseOpt);
+
+        const satSet = new Set();
+
+        // Sats aus Meta
+        if (Array.isArray(satsMeta)) {
+            satsMeta.forEach(s => {
+                if (s.sat_id) satSet.add(s.sat_id);
+            });
+        }
+
+        // Sats aus Services (falls Meta noch nicht alles kennt)
+        allServices.forEach(item => {
+            const sid = getServiceSatId(item);
+            if (sid) satSet.add(sid);
+        });
+
+        Array.from(satSet).sort().forEach(sid => {
+            const opt = document.createElement("option");
+            opt.value = sid;
+            opt.textContent = sid;
+            select.appendChild(opt);
+        });
+
+        // Versuch, den vorherigen Wert zu erhalten
+        if (currentValue && Array.from(select.options).some(o => o.value === currentValue)) {
+            select.value = currentValue;
+        } else {
+            select.value = "";
+        }
+    }
+
+    /* ---------------------------
+        Rendering der Service-Gruppen
+    ----------------------------*/
+    function renderServiceGroups() {
+        const container = document.getElementById("serviceGroupsContainer");
+        const includeTypes = normalizeServiceTypeList(activeIncludeServiceTypes);
+        const includeTypeSet = new Set(includeTypes);
+        const q = (document.getElementById("searchInput").value || "").toLowerCase().trim();
+        const spoofOnly = document.getElementById("filterSpoofOnly").checked;
+        const emptyState = document.getElementById("emptyState");
+        const satSelect = document.getElementById("satSelect");
+        const satVal = satSelect ? satSelect.value : "";
+
+        container.innerHTML = "";
+
+        const groups = new Map();
+        allServices.forEach(item => {
+            const s = item.service || {};
+            const name = s.service_name || "(unbekannter Service)";
+            if (!groups.has(name)) groups.set(name, []);
+            groups.get(name).push(item);
+        });
+
+        let totalVisibleInstances = 0;
+        const sortedGroups = Array.from(groups.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+        let groupIndex = 0;
+
+        sortedGroups.forEach(([serviceName, instances]) => {
+            if (includeTypeSet.size > 0 && !includeTypeSet.has(serviceName)) return;
+
+            let filteredInstances = instances.slice();
+
+            if (satVal) {
+                filteredInstances = filteredInstances.filter(item => getServiceSatId(item) === satVal);
+            }
+
+            if (q) {
+                filteredInstances = filteredInstances.filter(item => {
+                    const s = item.service || {};
+                    const meta = item.meta || {};
+                    const norm = meta.normalized || {};
+                    const identity = norm.identity || {};
+                    const fields = [
+                        s.instance_name || "",
+                        s.service_name || "",
+                        s.hostname || "",
+                        (s.addresses || []).join(", "),
+                        identity.vendor_display || "",
+                        identity.vendor || "",
+                        identity.model_display || "",
+                        identity.model || "",
+                        identity.friendly_name || ""
+                    ];
+                    return fields.some(f => f.toLowerCase().includes(q));
+                });
+            }
+
+            if (spoofOnly) {
+                filteredInstances = filteredInstances.filter(item => item.spoof_enabled);
+            }
+
+            // Status-Filter (online/offline/config-only)
+            if (statusFilter) {
+                filteredInstances = filteredInstances.filter(item => {
+                    return getServiceStatus(item) === statusFilter;
+                });
+            }
+
+
+            if (!filteredInstances.length) return;
+
+            filteredInstances.sort((a, b) => {
+                const da = isoToDate(a.service?.last_seen);
+                const db = isoToDate(b.service?.last_seen);
+                if (!da && !db) return 0;
+                if (!da) return 1;
+                if (!db) return -1;
+                return db - da;
+            });
+
+            totalVisibleInstances += filteredInstances.length;
+
+            const anySpoof = filteredInstances.some(i => i.spoof_enabled);
+            const newestDate = isoToDate(filteredInstances[0].service?.last_seen);
+            const newestLabel = newestDate ? formatLocal(newestDate.toISOString()) : "–";
+
+            const defaultCollapsed = groupIndex > 0;
+            const collapsed = isGroupCollapsed(serviceName, defaultCollapsed);
+
+            const card = document.createElement("article");
+            card.className = "bg-white/95 border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow";
+            card.setAttribute("aria-label", serviceName);
+
+            const svcKeyEsc = serviceName.replace(/'/g, "\\'");
+            const bodyClasses = collapsed ? "mt-3 hidden" : "mt-3";
+
+            const chevronIcon = `
+                <svg class="h-3.5 w-3.5 text-slate-400 transition-transform ${collapsed ? "" : "rotate-90"}" viewBox="0 0 20 20" aria-hidden="true">
+                    <path d="M7 5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            `;
+
+            let instancesHtml = "";
+            filteredInstances.forEach(item => {
+                const s = item.service || {};
+                const key = (item.service_key || "").replace(/'/g, "\\'");
+                const instanceLabel = formatInstanceLabel(s.instance_name || "");
+                const hostname = shorten(s.hostname || "–", 40);
+                const addrs = s.addresses && s.addresses.length
+                    ? shorten(s.addresses.join(", "), 60)
+                    : "";
+
+                const sourceIface = s.source_iface || "–";
+                const satId = getServiceSatId(item) || "–";
+
+                const meta = item.meta || {};
+                const norm = meta.normalized || {};
+                const identity = norm.identity || {};
+                const vendor = identity.vendor_display || identity.vendor || "";
+                const model = identity.model_display || identity.model || "";
+                const friendlyName = identity.friendly_name || "";
+
+                const vendorModelLine = [vendor, model].filter(Boolean).join(" · ");
+
+                // 🔧 MAC + gemeinsame Identity-Zeile
+                const mac = (s.mac || norm.mac || identity.mac || identity.device_mac || "").toLowerCase();
+                const identityParts = [];
+                if (mac) identityParts.push(mac);
+                if (vendorModelLine) identityParts.push(vendorModelLine);
+                if (friendlyName) identityParts.push(friendlyName);
+                const identityLine = identityParts.join(" · ");
+
+                const status = getServiceStatus(item);
+                const statusInfo = getStatusMeta(status);
+
+                const targetsLabel = buildTargetsLabel(item.spoof_targets || []);
+                const shortTargets = targetsLabel ? shorten(targetsLabel, 80) : "";
+
+                const isEnabled = !!item.spoof_enabled;
+                const statusLabel = "Spoofing";
+
+                const pillBase =
+                    "inline-flex items-center justify-center w-full md:w-40 rounded-full px-3.5 py-1.5 " +
+                    "text-[0.7rem] sm:text-xs border font-medium shadow-sm transition-all " +
+                    "focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-slate-50 focus:ring-emerald-500";
+
+                const pillClass = isEnabled
+                    ? pillBase + " bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
+                    : pillBase + " bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200";
+
+                const indicatorClass = isEnabled
+                    ? "h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_2px_rgba(16,185,129,0.35)]"
+                    : "h-2.5 w-2.5 rounded-full bg-slate-400";
+
+                instancesHtml += `
+            <li class="py-3 first:pt-1 last:pb-1">
+            <div class="flex flex-col gap-2 md:grid md:grid-cols-[minmax(0,2.2fr)_minmax(0,2.6fr)_minmax(0,1.3fr)] md:items-center md:gap-4 rounded-xl px-2 md:px-3 hover:bg-slate-50/80 transition-colors">
+
+                <!-- 1) LINKE SPALTE -->
+                <button type="button" class="text-left group"
+                        onclick="openDetailByKey('${key}')"
+                        aria-label="Details für ${escapeAttr(instanceLabel.aria)}">
+                    <div class="flex items-start gap-2">
+                        <div class="instance-label font-mono text-[0.75rem] sm:text-xs font-semibold
+                                    text-slate-900 max-w-full group-hover:text-slate-950">
+                            ${instanceLabel.html}
+                        </div>
+                        <span class="${statusInfo.dotClass} flex-shrink-0 mt-0.5"
+                            title="${statusInfo.tooltip}"
+                            aria-label="${statusInfo.label}"></span>
+                    </div>
+                <div class="mt-0.5 text-[0.65rem] sm:text-[0.7rem] text-slate-500 space-y-0.5 leading-tight">
+                <p class="font-mono break-all">${hostname}</p>
+                ${addrs ? `<p class="font-mono text-slate-500 break-all">${addrs}</p>` : ""}
+                </div>
+                ${mac ? `
+                <p class="mt-0.5 text-[0.65rem] text-slate-500 font-mono break-all leading-tight">
+                    ${escapeHtml(mac)}
+                </p>
+                ` : ""}
+
+                ${(vendorModelLine || friendlyName) ? `
+                <p class="mt-0.5 text-[0.65rem] text-slate-500 break-all leading-tight">
+                    ${escapeHtml([vendorModelLine, friendlyName].filter(Boolean).join(" · "))}
+                </p>
+                ` : ""}
+
+                </button>
+
+                <!-- 2) MITTLERE SPALTE: technische Infos + Targets -->
+                <div class="inline-flex flex-col rounded-xl border border-slate-200 bg-slate-50/80
+                            px-3 py-1.5 text-[0.65rem] sm:text-[0.7rem] text-slate-600 leading-snug
+                            md:justify-self-stretch md:ml-2 md:border-l-4 md:border-l-slate-200">
+                <div class="flex flex-wrap gap-x-4 gap-y-1">
+                    <div>
+                    <span class="font-semibold text-slate-700">Entdeckt auf:</span>
+                    <span class="font-mono">${satId}</span>
+                    </div>
+                    <div>
+                    <span class="font-semibold text-slate-700">Source-IF:</span>
+                    <span class="font-mono">${sourceIface}</span>
+                    </div>
+                    <div>
+                    <span class="font-semibold text-slate-700">Zuletzt gesehen:</span>
+                    <span class="font-mono">${formatLocal(s.last_seen)}</span>
+                    </div>
+                </div>
+
+                ${shortTargets ? `
+                <div class="mt-1.5 pt-1 border-t border-dashed border-slate-200/70">
+                    <span class="font-semibold text-slate-700">Targets:</span>
+                    <span class="font-mono" title="${targetsLabel}">${shortTargets}</span>
+                </div>` : ""}
+
+                </div>
+
+                <!-- 3) RECHTE SPALTE: Toggle + Konfiguration -->
+                <div class="flex flex-row md:flex-col md:items-end gap-2 justify-between md:justify-center mt-1">
+                <button type="button"
+                        class="${pillClass}"
+                        onclick="toggleInstanceSpoof('${key}', ${isEnabled ? "false" : "true"})"
+                        role="switch"
+                        aria-pressed="${isEnabled ? "true" : "false"}"
+                        aria-label="Spoofing für diese Instanz ${isEnabled ? "deaktivieren" : "aktivieren"}">
+                    <span class="flex items-center gap-1.5">
+                    <span class="${indicatorClass}"></span>
+                    <span>${statusLabel}</span>
+                    </span>
+                </button>
+                <button type="button"
+                        class="inline-flex items-center justify-center w-full md:w-40 rounded-full border border-slate-300 px-3.5 py-1.5 text-[0.7rem] sm:text-xs text-slate-700 bg-white hover:bg-slate-50 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-slate-50 focus:ring-slate-400"
+                        onclick="openDetailByKey('${key}', 'spoof')">
+                    Targets / Details …
+                </button>
+                </div>
+
+            </div>
+            </li>
+            `;
+            });
+
+            card.innerHTML = `
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <button type="button"
+                    class="flex-1 flex items-start justify-between gap-3 text-left"
+                    onclick="toggleServiceGroup('${svcKeyEsc}')"
+                    aria-expanded="${collapsed ? "false" : "true"}">
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-slate-900 text-slate-50">
+                        ${chevronIcon}
+                    </span>
+                    <div class="flex flex-col">
+                        <span class="font-mono text-xs sm:text-sm font-semibold text-slate-900 break-all">
+                            ${serviceName}
+                        </span>
+                        <div class="mt-1 flex flex-wrap gap-2 text-[0.7rem] sm:text-xs text-slate-600">
+                            <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5">
+                                ${filteredInstances.length} Instanz${filteredInstances.length === 1 ? "" : "en"}
+                            </span>
+                            <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5">
+                                Letzte Sichtung: ${newestLabel}
+                            </span>
+                            <span class="inline-flex items-center rounded-full px-2 py-0.5
+                                ${anySpoof
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : "bg-slate-100 text-slate-600"}">
+                                Spoofing
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </button>
+        </div>
+
+        <div class="${bodyClasses}">
+            <ul class="mt-3 divide-y divide-slate-100/80">
+                ${instancesHtml}
+            </ul>
+        </div>
+    `;
+
+            container.appendChild(card);
+            groupIndex++;
+        });
+
+        const label = document.getElementById("serviceCount");
+        label.textContent = `${totalVisibleInstances} Instanz${totalVisibleInstances === 1 ? "" : "en"}`;
+
+        if (emptyState) {
+            emptyState.classList.toggle("hidden", totalVisibleInstances > 0);
+        }
+    }
+
+    /* ---------------------------
+        API-Load
+    ----------------------------*/
+    async function loadServicesFromApi() {
+        const serviceCountLabel = document.getElementById("serviceCount");
+        const headerCount = document.getElementById("headerServiceCount");
+
+        if (serviceCountLabel) {
+            serviceCountLabel.textContent = "Lade Services…";
+        }
+
+        const url = "/api/v1/services";
+
+        try {
+            const resp = await fetch(url, { headers: { "Accept": "application/json" } });
+            if (!resp.ok) throw new Error("HTTP " + resp.status);
+            const data = await resp.json();
+            if (!Array.isArray(data)) throw new Error("Antwort ist kein Array");
+
+            // 🔧 HIER: Spoofing-Infos aus meta -> Top-Level ziehen
+            allServices = data.map(item => {
+                const meta = item.meta || {};
+                return {
+                    ...item,
+                    spoof_enabled: !!meta.spoof_enabled,
+                    spoof_note: meta.spoof_note || "",
+                    spoof_targets: meta.spoof_targets || []
+                };
+            });
+
+            if (headerCount) {
+                headerCount.textContent = allServices.length;
+            }
+
+            initSatFilterOptions();
+            applySavedFilters();
+            renderServiceGroups();
+        } catch (e) {
+            console.error("Fehler beim Laden der Services:", e);
+            if (serviceCountLabel) {
+                serviceCountLabel.textContent = "Fehler beim Laden der Services.";
+            }
+        }
+    }
+
+    /* ---------------------------
+        Init & Event Binding
+    ----------------------------*/
+    document.addEventListener("keydown", e => {
+        if (e.key === "Escape") {
+            const overlay = document.getElementById("detailOverlay");
+            if (overlay && !overlay.classList.contains("hidden")) {
+                e.stopPropagation();
+                closeDetail();
+            }
+        }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("headerServiceCount").textContent = "0";
+
+        const searchInput = document.getElementById("searchInput");
+        const serviceTypeSearchInput = document.getElementById("serviceTypeSearchInput");
+        const serviceTypeCombobox = document.getElementById("serviceTypeCombobox");
+        const saveServiceFilterButton = document.getElementById("saveServiceFilterDefaults");
+
+        searchInput.addEventListener("input", () => {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => {
+                renderServiceGroups();
+            }, SEARCH_DEBOUNCE_MS);
+            saveFilterState();
+        });
+
+        serviceTypeSearchInput.addEventListener("focus", () => {
+            renderServiceTypeSuggestions();
+        });
+
+        serviceTypeSearchInput.addEventListener("input", () => {
+            renderServiceTypeSuggestions();
+        });
+
+        serviceTypeSearchInput.addEventListener("keydown", event => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                const available = getAvailableServiceTypeOptions()
+                    .filter(option => option && option.name)
+                    .filter(option => !activeIncludeServiceTypes.includes(option.name))
+                    .filter(option => {
+                        const query = (serviceTypeSearchInput.value || "").trim().toLowerCase();
+                        return !query || option.name.toLowerCase().includes(query);
+                    })
+                    .sort((a, b) => a.name.localeCompare(b.name));
+
+                if (available.length > 0) {
+                    addActiveServiceType(available[0].name);
+                }
+            }
+        });
+
+        serviceTypeCombobox.addEventListener("click", () => {
+            serviceTypeSearchInput.focus();
+        });
+
+        document.getElementById("filterSpoofOnly").addEventListener("change", () => {
+            renderServiceGroups();
+            saveFilterState();
+        });
+
+        saveServiceFilterButton.addEventListener("click", () => {
+            saveServiceFilterDefaults();
+        });
+
+        // 🔧 NEU: Status-Filter-Buttons anklemmen
+        const statusButtons = document.querySelectorAll("[data-status-filter]");
+        statusButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                const val = btn.getAttribute("data-status-filter") || "";
+                setStatusFilter(val);
+            });
+        });
+        // Initial einmal Zustand der Buttons setzen
+        updateStatusFilterButtons();
+
+        document.getElementById("resetFilters").addEventListener("click", () => {
+            setActiveServiceTypes((uiServiceFilterConfig && uiServiceFilterConfig.include_service_types) || []);
+            serviceTypeSearchInput.value = "";
+            hideServiceTypeDropdown();
+            document.getElementById("searchInput").value = "";
+            document.getElementById("filterSpoofOnly").checked = false;
+            const satSelect = document.getElementById("satSelect");
+            if (satSelect) satSelect.value = "";
+
+            // 🔧 NEU: Statusfilter auch zurücksetzen
+            statusFilter = "";
+            updateStatusFilterButtons();
+
+            renderServiceGroups();
+            saveFilterState(); 
+        });
+
+        const satSelect = document.getElementById("satSelect");
+        if (satSelect) {
+            satSelect.addEventListener("change", () => {
+                // optional: Header-Label aktualisieren
+                const headerLabel = document.getElementById("headerCurrentSatLabel");
+                if (headerLabel) {
+                    headerLabel.textContent = satSelect.value || "alle";
+                }
+                renderServiceGroups();
+                saveFilterState(); 
+
+            });
+        }
+
+        document.getElementById("detailTabOverview").addEventListener("click", () => setDetailTab("overview"));
+        document.getElementById("detailTabTxt").addEventListener("click", () => setDetailTab("txt"));
+        document.getElementById("detailTabRaw").addEventListener("click", () => setDetailTab("raw"));
+        document.getElementById("detailTabSpoof").addEventListener("click", () => openSpoofEditor());
+
+        const spoofEnabledEl = document.getElementById("spoofEnabled");
+        spoofEnabledEl.addEventListener("change", () => {
+            spoofEnabledEl.setAttribute("aria-checked", spoofEnabledEl.checked ? "true" : "false");
+        });
+
+        document.addEventListener("click", event => {
+            const dropdown = document.getElementById("serviceTypeDropdown");
+            if (!dropdown || !serviceTypeCombobox || !serviceTypeSearchInput) return;
+
+            const target = event.target;
+            if (!(target instanceof Node)) return;
+
+            if (
+                !serviceTypeCombobox.contains(target) &&
+                !dropdown.contains(target)
+            ) {
+                hideServiceTypeDropdown();
+            }
+        });
+
+        async function initPage() {
+            try {
+                await loadServiceFilterConfig();
+            } catch (error) {
+                console.error("Fehler beim Laden der Service-Filter-Konfiguration:", error);
+                applyServiceFilterConfig({
+                    include_service_types: [],
+                    static_default_service_types: [],
+                    observed_service_types: [],
+                    available_service_types: [],
+                });
+                showServiceFilterSaveStatus("Service-Filter-Defaults konnten nicht geladen werden.", "error");
+            }
+
+            await loadSatsMeta();
+            await loadServicesFromApi();
+        }
+
+        initPage();
+    });
+</script>
+
+</body>
+
+</html>

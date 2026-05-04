@@ -1,0 +1,60 @@
+[
+  {
+    "sat_id": "mdns-sat-2",
+    "hostname": "mdns-sat-2",
+    "mgmt_interface": "ens160",
+    "interfaces": [
+      {
+        "name": "ens160",
+        "mode": "scan",
+        "vlan_id": null,
+        "ip_mode": "static",
+        "ip_address": "192.168.177.99"
+      }
+    ],
+    "ws_connected": true,
+    "last_ws_hello": "2025-12-10T20:36:59.221532+00:00",
+    "last_telemetry": "2025-12-10T21:11:20.295352+00:00"
+  },
+  {
+    "sat_id": "mdns-sat-guest",
+    "hostname": null,
+    "mgmt_interface": null,
+    "interfaces": [
+      {
+        "name": "ens160",
+        "mode": "advertise",
+        "vlan_id": null,
+        "ip_mode": "dhcp",
+        "ip_address": "192.168.222.104"
+      }
+    ],
+    "ws_connected": false,
+    "last_ws_hello": null,
+    "last_telemetry": null
+  },
+  {
+    "sat_id": "msa-sat-pi",
+    "hostname": "msa-sat-pi",
+    "mgmt_interface": "eth0",
+    "interfaces": [
+      {
+        "name": "eth0",
+        "mode": "scan",
+        "vlan_id": null,
+        "ip_mode": "dhcp",
+        "ip_address": "192.168.177.112"
+      },
+      {
+        "name": "eth0.222",
+        "mode": "advertise",
+        "vlan_id": 222,
+        "ip_mode": "static",
+        "ip_address": "192.168.222.252/24"
+      }
+    ],
+    "ws_connected": true,
+    "last_ws_hello": "2025-12-10T20:36:59.334377+00:00",
+    "last_telemetry": "2025-12-10T21:11:21.318601+00:00"
+  }
+]
