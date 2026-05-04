@@ -21,6 +21,21 @@ MSA besteht aus zwei Komponenten:
 
 Satelliten können Services auch in konfigurierte Netzwerke/VLANs replizieren (Spoofing).
 
+## Architektur-Visualisierung
+
+**Detailansicht (Architektur):**
+![MSA Architektur – Collect -> Hub -> Republish/Spoof](assets/images/msa-architecture-spoof.png)
+
+**Flow-only:**
+![MSA Flow-only – Collect -> Hub Mapping -> Republish](assets/images/msa-flow-only.png)
+
+Kernaussage beider Grafiken:
+- SAT sammelt lokale Services (Discovery)
+- Upload zum HUB (wss + shared secret)
+- HUB mapped/routet standortübergreifend
+- Ziel-SAT spielt Services lokal wieder aus (Republish/Spoof)
+- Clients am Zielstandort sehen den Dienst wie lokal vorhanden
+
 ## Features
 
 - **Service Discovery**: Automatische Erkennung von mDNS-Services (PTR, SRV, TXT, A, AAAA)
