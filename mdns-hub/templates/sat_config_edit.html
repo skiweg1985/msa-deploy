@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Sat-Konfiguration bearbeiten – {{ sat_id }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-950 text-slate-50 antialiased">
+<div class="min-h-screen flex flex-col">
+
+    <!-- App-Shell Header -->
+    <header class="border-b border-slate-800 bg-slate-950/95 backdrop-blur">
+        <div
+            class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <!-- LEFT: Logo + App Name + Section -->
+            <div class="flex items-center gap-3 sm:gap-4">
+                <div
+                    class="flex items-center justify-center h-10 w-10 rounded-xl bg-slate-800/70 ring-1 ring-slate-700/70">
+                    <img src="{{ url_for('static', path='img/msa-logo.png') }}" alt="MSA Logo" class="h-7 w-auto" />
+                </div>
+                <div class="flex flex-col leading-tight">
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-lg sm:text-xl font-semibold tracking-tight text-slate-50">MSA</span>
+                        <span
+                            class="hidden sm:inline text-xs font-medium tracking-wide text-slate-400 uppercase">mDNS
+                            Service Atlas</span>
+                    </div>
+                    <span
+                        class="text-[0.7rem] sm:text-xs font-medium tracking-wide text-sky-300/80 uppercase">Sat-Konfiguration</span>
+                </div>
+            </div>
+
+            <!-- RIGHT: Navigation -->
+            <nav class="flex items-center" aria-label="Hauptnavigation">
+                <div
+                    class="inline-flex rounded-full bg-slate-900/80 p-1 text-xs sm:text-sm border border-slate-700/70 shadow-sm">
+                    <a href="/ui/sats"
+                       class="px-3 sm:px-4 py-1.5 rounded-full font-medium text-slate-200 hover:text-slate-50 hover:bg-slate-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-colors">
+                        Satelliten
+                    </a>
+                    <a href="/ui/services"
+                       class="px-3 sm:px-4 py-1.5 rounded-full font-medium text-slate-200 hover:text-slate-50 hover:bg-slate-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-colors">
+                        Services
+                    </a>
+                    <a href="/ui/spoofing"
+                       class="px-3 sm:px-4 py-1.5 rounded-full font-medium text-slate-200 hover:text-slate-50 hover:bg-slate-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-colors">
+                        Spoofing
+                    </a>
+                    <a href="/ui/groups"
+                       class="px-3 sm:px-4 py-1.5 rounded-full font-medium text-slate-200 hover:text-slate-50 hover:bg-slate-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-colors">
+                        Groups
+                    </a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="flex-1" role="main">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+
+            <!-- Hauptkarte -->
+            <section
+                class="bg-white/95 text-slate-900 shadow-xl shadow-slate-900/10 rounded-2xl border border-slate-200/70 p-6 sm:p-8"
+                aria-labelledby="sat-edit-heading">
+
+                <!-- Kopfbereich -->
+                <header class="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div class="space-y-1">
+                        <h1 id="sat-edit-heading"
+                            class="text-lg sm:text-xl font-semibold text-slate-900 tracking-tight">
+                            Sat-Konfiguration bearbeiten
+                        </h1>
+                        <p class="text-xs sm:text-sm text-slate-500">
+                            Konfiguration für
+                            <span class="font-mono text-slate-900">{{ sat_id }}</span>
+                            anpassen.
+                        </p>
+                        <p class="text-[0.7rem] sm:text-xs text-slate-400">
+                            Änderungen wirken, sobald der Sat seine Config neu abruft.
+                        </p>
+                    </div>
+
+                    <nav class="flex flex-wrap gap-2 text-[0.7rem] sm:text-xs">
+                        <a href="/ui/sats"
+                           class="inline-flex items-center rounded-full border border-slate-300 bg-white px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50">
+                            Übersicht&nbsp;Satelliten
+                        </a>
+                        <a href="/ui/services?sat_id={{ sat_id }}"
+                           class="inline-flex items-center rounded-full bg-slate-900 px-3 py-1.5 font-medium text-slate-50 hover:bg-slate-800">
+                            Services zu&nbsp;<span class="font-mono ml-1">{{ sat_id }}</span>
+                        </a>
+                    </nav>
+                </header>
+
+                <!-- Sat Info / ggf. Fehlermeldung -->
+                <div class="mb-4 text-xs sm:text-sm text-slate-500">
+                    <span class="font-semibold">Sat ID:</span>
+                    <span class="font-mono text-slate-800">{{ sat_id }}</span>
+                </div>
+
+                {% if error %}
+                <div
+                    class="mb-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 px-3 py-2 text-xs sm:text-sm">
+                    {{ error }}
+                </div>
+                {% endif %}
+
+                <!-- Formularkarte -->
+                <!-- Formularkarte -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
+                    <!-- Modus-Toggle -->
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-sm sm:text-base font-semibold text-slate-900">
+                            Interfaces konfigurieren
+                        </h2>
+                        <div class="inline-flex items-center rounded-full bg-slate-100 p-1 text-[0.7rem] sm:text-xs border border-slate-200">
+                            <button type="button" id="viewToggleGui"
+                                    class="px-3 py-1.5 rounded-full font-medium bg-white shadow-sm text-slate-900">
+                                GUI-Modus
+                            </button>
+                            <button type="button" id="viewToggleJson"
+                                    class="px-3 py-1.5 rounded-full font-medium text-slate-600 hover:text-slate-900">
+                                JSON-Editor
+                            </button>
+                        </div>
+                    </div>
+
+                    <form id="sat-edit-form" method="post" action="/ui/sats/{{ sat_id }}/edit" class="space-y-4">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+
+                        <!-- GUI-PANEL -->
+                        <div id="interfaces_gui_panel" class="space-y-4">
+                            <p class="text-[0.7rem] sm:text-xs text-slate-500 mb-1">
+                                Definiert Mgmt- und VLAN-Interfaces inkl. Scan-/Advertise-Mode.
+                                Du kannst Zeilen hinzufügen, bearbeiten oder entfernen.
+                            </p>
+
+                            <div id="interfaces_list" class="space-y-3">
+                                <!-- Rows werden per JS gerendert -->
+                            </div>
+
+                            <button type="button" id="btn-add-interface"
+                                    class="mt-2 inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[0.7rem] sm:text-xs font-medium text-slate-700 hover:bg-slate-50">
+                                <span class="text-base mr-1 leading-none">+</span>
+                                Interface hinzufügen
+                            </button>
+                        </div>
+
+                        <!-- JSON-PANEL -->
+                        <div id="interfaces_json_panel" class="space-y-2 hidden">
+                            <label for="interfaces_json"
+                                class="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
+                                Interfaces-Konfiguration (JSON-Array)
+                            </label>
+
+                            <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                                <p class="text-[0.7rem] sm:text-xs text-slate-500">
+                                    Power-User-Ansicht: Rohes JSON direkt bearbeiten.
+                                </p>
+                                <div class="flex items-center gap-2">
+                                    <span id="interfaces_status_badge" class="hidden"></span>
+                                    <button type="button" id="btn-pretty-json"
+                                            class="inline-flex items-center rounded-full border border-slate-300 bg-white px-3 py-1.5 text-[0.7rem] sm:text-xs font-medium text-slate-700 hover:bg-slate-50">
+                                        JSON formatieren
+                                    </button>
+                                </div>
+                            </div>
+
+                            <textarea id="interfaces_json" name="interfaces_json"
+                                    class="block w-full rounded-lg bg-slate-50 px-2.5 py-2 text-xs sm:text-sm text-slate-900 shadow-sm font-mono min-h-[200px] border border-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900">{{ interfaces_json }}</textarea>
+
+                            {% if error %}
+                            <div id="interfaces_error" class="mt-1 text-[0.7rem] sm:text-xs text-rose-600">
+                                {{ error }}
+                            </div>
+                            {% else %}
+                            <div id="interfaces_error" class="mt-1 text-[0.7rem] sm:text-xs text-rose-600 hidden"></div>
+                            {% endif %}
+
+                            <div class="mt-3 text-[0.7rem] sm:text-xs text-slate-500">
+                                Beispiel:
+                                <pre
+                                    class="mt-1 max-h-48 overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-2 text-[0.7rem] font-mono text-slate-800">
+                [
+                {
+                    "name": "eth0",
+                    "description": "Mgmt",
+                    "vlan_id": null,
+                    "ip_mode": "dhcp",
+                    "ip_address": null,
+                    "mode": "scan"
+                },
+                {
+                    "name": "eth0.30",
+                    "description": "Guest VLAN",
+                    "vlan_id": 30,
+                    "ip_mode": "none",
+                    "ip_address": null,
+                    "mode": "scan_and_advertise"
+                }
+                ]
+                </pre>
+                                Gültige Modes:
+                                <span class="font-mono">none</span>,
+                                <span class="font-mono">sniff_only</span>,
+                                <span class="font-mono">scan</span>,
+                                <span class="font-mono">advertise</span>,
+                                <span class="font-mono">scan_and_advertise</span>.
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="pt-2 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+                            <div class="flex gap-2">
+                                <button type="submit"
+                                        class="inline-flex items-center rounded-lg bg-slate-900 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-50 hover:bg-slate-800">
+                                    Speichern
+                                </button>
+                                <a href="/ui/sats"
+                                class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50">
+                                    Abbrechen
+                                </a>
+                            </div>
+                            <p class="text-[0.7rem] sm:text-xs text-slate-400">
+                                Änderungen wirken, sobald der Sat seine Config neu abruft.
+                            </p>
+                        </div>
+                    </form>
+                </div>                
+            </section>
+        </div>
+    </main>
+</div>
+
+<script>
+(function () {
+    const guiPanel = document.getElementById('interfaces_gui_panel');
+    const jsonPanel = document.getElementById('interfaces_json_panel');
+    const toggleGui = document.getElementById('viewToggleGui');
+    const toggleJson = document.getElementById('viewToggleJson');
+
+    const textarea = document.getElementById('interfaces_json');
+    const errorBox = document.getElementById('interfaces_error');
+    const badge = document.getElementById('interfaces_status_badge');
+    const prettyBtn = document.getElementById('btn-pretty-json');
+    const form = document.getElementById('sat-edit-form');
+    const listContainer = document.getElementById('interfaces_list');
+    const addButton = document.getElementById('btn-add-interface');
+
+    let interfaces = [];
+
+    // ─────────────────────────────
+    // Helper: Klassen & Badges
+    // ─────────────────────────────
+    function setTextareaClasses(extra) {
+        const base =
+            'block w-full rounded-lg bg-slate-50 px-2.5 py-2 text-xs sm:text-sm text-slate-900 shadow-sm focus:ring-1 font-mono min-h-[200px] border';
+        textarea.className = base + ' ' + extra;
+    }
+
+    function showValid() {
+        errorBox.classList.add('hidden');
+        errorBox.textContent = '';
+
+        badge.classList.remove('hidden');
+        badge.textContent = 'JSON gültig';
+        badge.className =
+            'inline-flex items-center rounded-full border px-2.5 py-0.5 text-[0.65rem] font-medium ' +
+            'border-emerald-200 bg-emerald-50 text-emerald-700';
+
+        setTextareaClasses('border-emerald-300 focus:border-emerald-600 focus:ring-emerald-600');
+    }
+
+    function showInvalid(message) {
+        errorBox.classList.remove('hidden');
+        errorBox.textContent = 'JSON ungültig: ' + message;
+
+        badge.classList.remove('hidden');
+        badge.textContent = 'JSON ungültig';
+        badge.className =
+            'inline-flex items-center rounded-full border px-2.5 py-0.5 text-[0.65rem] font-medium ' +
+            'border-rose-200 bg-rose-50 text-rose-700';
+
+        setTextareaClasses('border-rose-300 focus:border-rose-600 focus:ring-rose-600');
+    }
+
+    function showNeutral() {
+        if (errorBox) {
+            errorBox.classList.add('hidden');
+            errorBox.textContent = '';
+        }
+
+        if (badge) {
+            badge.classList.add('hidden');
+            badge.textContent = '';
+        }
+
+        setTextareaClasses('border-slate-300 focus:border-slate-900 focus:ring-slate-900');
+    }
+
+    // ─────────────────────────────
+    // JSON <-> Modell
+    // ─────────────────────────────
+    function parseJsonToModel() {
+        const raw = textarea.value.trim();
+        if (!raw) {
+            interfaces = [];
+            showNeutral();
+            return true;
+        }
+        try {
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) {
+                showInvalid('Wurzel-Element muss ein Array sein (z. B. [ { ... } ]).');
+                return false;
+            }
+            // leichte Validierung / Normalisierung
+            interfaces = parsed.map((item, idx) => {
+                if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+                    throw new Error('Eintrag #' + (idx + 1) + ' ist kein Objekt.');
+                }
+                return {
+                    name: item.name ?? '',
+                    description: item.description ?? '',
+                    vlan_id: item.vlan_id ?? null,
+                    ip_mode: item.ip_mode ?? 'none',
+                    ip_address: item.ip_address ?? null,
+                    mode: item.mode ?? 'none'
+                };
+            });
+            showValid();
+            return true;
+        } catch (e) {
+            showInvalid(e.message || String(e));
+            return false;
+        }
+    }
+
+    function syncJsonFromModel(pretty = false) {
+        const json = pretty
+            ? JSON.stringify(interfaces, null, 2)
+            : JSON.stringify(interfaces);
+        textarea.value = json;
+    }
+
+    // ─────────────────────────────
+    // GUI-Rendering
+    // ─────────────────────────────
+    function renderInterfaces() {
+        listContainer.innerHTML = '';
+
+        if (!interfaces.length) {
+            const empty = document.createElement('p');
+            empty.className = 'text-[0.7rem] sm:text-xs text-slate-400';
+            empty.textContent = 'Noch keine Interfaces definiert. Füge ein Interface hinzu.';
+            listContainer.appendChild(empty);
+            return;
+        }
+
+        interfaces.forEach((iface, index) => {
+            const card = document.createElement('div');
+            card.className =
+                'rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 sm:px-4 sm:py-3 flex flex-col gap-2';
+
+            const header = document.createElement('div');
+            header.className = 'flex items-center justify-between gap-2';
+
+            const title = document.createElement('div');
+            title.className = 'flex items-baseline gap-2';
+            title.innerHTML = `
+                <span class="font-mono text-xs sm:text-sm text-slate-900">${iface.name || '(ohne Name)'}</span>
+                <span class="text-[0.7rem] text-slate-400">Interface #${index + 1}</span>
+            `;
+
+            const actions = document.createElement('div');
+            actions.className = 'flex items-center gap-2';
+
+            const modeBadge = document.createElement('span');
+            modeBadge.className =
+                'inline-flex items-center rounded-full bg-slate-900 text-slate-50 px-2 py-0.5 text-[0.65rem] font-medium';
+            modeBadge.textContent = iface.mode || 'none';
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className =
+                'inline-flex items-center rounded-full border border-slate-300 bg-white px-2 py-0.5 text-[0.65rem] text-slate-700 hover:bg-slate-100';
+            removeBtn.innerHTML = '&times;';
+            removeBtn.title = 'Interface entfernen';
+            removeBtn.addEventListener('click', () => {
+                interfaces.splice(index, 1);
+                renderInterfaces();
+                syncJsonFromModel(true);
+            });
+
+            actions.appendChild(modeBadge);
+            actions.appendChild(removeBtn);
+            header.appendChild(title);
+            header.appendChild(actions);
+
+            const grid = document.createElement('div');
+            grid.className = 'mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 text-[0.7rem] sm:text-xs';
+
+            // Helper für Input-Felder
+            function addField(labelText, value, onChange, opts = {}) {
+                const wrapper = document.createElement('div');
+                const label = document.createElement('label');
+                label.className = 'block mb-1 text-[0.65rem] uppercase tracking-wide text-slate-500';
+                label.textContent = labelText;
+
+                let input;
+                if (opts.type === 'select') {
+                    input = document.createElement('select');
+                    input.className =
+                        'block w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-[0.7rem] text-slate-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500';
+                    opts.options.forEach(opt => {
+                        const o = document.createElement('option');
+                        o.value = opt.value;
+                        o.textContent = opt.label;
+                        if (opt.value === value) o.selected = true;
+                        input.appendChild(o);
+                    });
+                } else {
+                    input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = value ?? '';
+                    input.className =
+                        'block w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-[0.7rem] text-slate-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 font-mono';
+                }
+
+                input.addEventListener('input', (e) => {
+                    onChange(e.target.value);
+                    renderInterfaces(); // um Titel/Badges zu aktualisieren
+                    syncJsonFromModel(true);
+                });
+
+                wrapper.appendChild(label);
+                wrapper.appendChild(input);
+                grid.appendChild(wrapper);
+            }
+
+            addField('Name', iface.name, (v) => { iface.name = v; });
+            addField('Beschreibung', iface.description, (v) => { iface.description = v; });
+
+            addField('VLAN-ID', iface.vlan_id != null ? iface.vlan_id : '', (v) => {
+                const trimmed = v.trim();
+                iface.vlan_id = trimmed === '' ? null : Number(trimmed);
+            });
+
+            addField('IP-Modus', iface.ip_mode, (v) => { iface.ip_mode = v; }, {
+                type: 'select',
+                options: [
+                    { value: 'none', label: 'none' },
+                    { value: 'dhcp', label: 'dhcp' },
+                    { value: 'static', label: 'static' }
+                ]
+            });
+
+            addField('IP-Adresse', iface.ip_address, (v) => {
+                const trimmed = v.trim();
+                iface.ip_address = trimmed === '' ? null : trimmed;
+            });
+
+            addField('Mode', iface.mode, (v) => { iface.mode = v; }, {
+                type: 'select',
+                options: [
+                    { value: 'none', label: 'none' },
+                    { value: 'sniff_only', label: 'sniff_only' },
+                    { value: 'scan', label: 'scan' },
+                    { value: 'advertise', label: 'advertise' },
+                    { value: 'scan_and_advertise', label: 'scan_and_advertise' }
+                ]
+            });
+
+            card.appendChild(header);
+            card.appendChild(grid);
+            listContainer.appendChild(card);
+        });
+    }
+
+    // ─────────────────────────────
+    // View-Toggle
+    // ─────────────────────────────
+    function setView(mode) {
+        const isGui = mode === 'gui';
+
+        if (isGui) {
+            guiPanel.classList.remove('hidden');
+            jsonPanel.classList.add('hidden');
+
+            toggleGui.className =
+                'px-3 py-1.5 rounded-full font-medium bg-white shadow-sm text-slate-900';
+            toggleJson.className =
+                'px-3 py-1.5 rounded-full font-medium text-slate-600 hover:text-slate-900';
+        } else {
+            guiPanel.classList.add('hidden');
+            jsonPanel.classList.remove('hidden');
+
+            toggleGui.className =
+                'px-3 py-1.5 rounded-full font-medium text-slate-600 hover:text-slate-900';
+            toggleJson.className =
+                'px-3 py-1.5 rounded-full font-medium bg-white shadow-sm text-slate-900';
+        }
+    }
+
+    toggleGui.addEventListener('click', () => {
+        // Beim Wechsel in GUI: ggf. JSON neu parsen
+        if (!parseJsonToModel()) {
+            // JSON schrott → im JSON-Editor bleiben
+            setView('json');
+            return;
+        }
+        renderInterfaces();
+        syncJsonFromModel(true);
+        setView('gui');
+    });
+
+    toggleJson.addEventListener('click', () => {
+        // Beim Wechsel in JSON: Modell → JSON
+        syncJsonFromModel(true);
+        setView('json');
+    });
+
+    // ─────────────────────────────
+    // Add-Button
+    // ─────────────────────────────
+    addButton.addEventListener('click', () => {
+        interfaces.push({
+            name: '',
+            description: '',
+            vlan_id: null,
+            ip_mode: 'none',
+            ip_address: null,
+            mode: 'none'
+        });
+        renderInterfaces();
+        syncJsonFromModel(true);
+    });
+
+    // ─────────────────────────────
+    // Pretty-Button (nur JSON-Ansicht)
+    // ─────────────────────────────
+    if (prettyBtn) {
+        prettyBtn.addEventListener('click', () => {
+            if (!parseJsonToModel()) return;
+            syncJsonFromModel(true);
+            showValid();
+        });
+    }
+
+    // ─────────────────────────────
+    // Form-Submit
+    // ─────────────────────────────
+    form.addEventListener('submit', (evt) => {
+        // Egal in welchem Modus → Modell nach JSON spiegeln
+        // Wenn wir gerade im JSON-Editor sind, vorher nochmal parsen,
+        // damit wir nicht mit ungültigem JSON abschicken.
+        if (!jsonPanel.classList.contains('hidden')) {
+            const ok = parseJsonToModel();
+            if (!ok) {
+                evt.preventDefault();
+                textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+        }
+        syncJsonFromModel(true);
+    });
+
+    // ─────────────────────────────
+    // Initialisierung
+    // ─────────────────────────────
+    window.addEventListener('load', () => {
+        const ok = parseJsonToModel();
+        if (ok) {
+            renderInterfaces();
+            syncJsonFromModel(true);
+            setView('gui'); // Default: GUI-Modus
+        } else {
+            // JSON kaputt → erst JSON-Editor zeigen
+            setView('json');
+        }
+    });
+})();
+</script>
+
+
+</body>
+</html>

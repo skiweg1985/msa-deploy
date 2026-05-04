@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>mDNS Hub – Satelliten</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-950 text-slate-50 antialiased">
+<div class="min-h-screen flex flex-col">
+
+    <!-- App-Shell Header -->
+    <header class="border-b border-slate-800 bg-slate-950/95 backdrop-blur">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <!-- LEFT: Logo + App Name + Section -->
+            <div class="flex items-center gap-3 sm:gap-4">
+                <div class="flex items-center justify-center h-10 w-10 rounded-xl bg-slate-800/70 ring-1 ring-slate-700/70">
+                    <img src="{{ url_for('static', path='img/msa-logo.png') }}" alt="MSA Logo" class="h-7 w-auto" />
+                </div>
+                <div class="flex flex-col leading-tight">
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-lg sm:text-xl font-semibold tracking-tight text-slate-50">MSA</span>
+                        <span class="hidden sm:inline text-xs font-medium tracking-wide text-slate-400 uppercase">
+                            mDNS Service Atlas
+                        </span>
+                    </div>
+                    <span class="text-[0.7rem] sm:text-xs font-medium tracking-wide text-sky-300/80 uppercase">
+                        Satelliten
+                    </span>
+                </div>
+            </div>
+
+            <!-- RIGHT: Navigation -->
+            <nav class="flex items-center" aria-label="Hauptnavigation">
+                <div class="inline-flex rounded-full bg-slate-900/80 p-1 text-xs sm:text-sm border border-slate-700/70 shadow-sm">
+                    <a href="/ui/sats" aria-current="page"
+                       class="px-3 sm:px-4 py-1.5 rounded-full font-semibold bg-slate-50 text-slate-900 shadow-sm ring-1 ring-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-colors">
+                        Satelliten
+                    </a>
+                    <a href="/ui/services"
+                       class="px-3 sm:px-4 py-1.5 rounded-full font-medium text-slate-200 hover:text-slate-50 hover:bg-slate-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-colors">
+                        Services
+                    </a>
+                    <a href="/ui/spoofing"
+                       class="px-3 sm:px-4 py-1.5 rounded-full font-medium text-slate-200 hover:text-slate-50 hover:bg-slate-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-colors">
+                        Spoofing
+                    </a>
+                    <a href="/ui/groups"
+                       class="px-3 sm:px-4 py-1.5 rounded-full font-medium text-slate-200 hover:text-slate-50 hover:bg-slate-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-colors">
+                        Groups
+                    </a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="flex-1" role="main">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+
+            <!-- Hauptkarte -->
+            <section
+                class="bg-white/95 text-slate-900 shadow-xl shadow-slate-900/10 rounded-2xl border border-slate-200/70 p-6 sm:p-8"
+                aria-labelledby="sats-heading">
+
+                <!-- Header-Zeile / Meta -->
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
+                    <div class="space-y-2">
+                        <h1 id="sats-heading" class="text-lg sm:text-xl font-semibold text-slate-900 tracking-tight">
+                            Satelliten
+                        </h1>
+                        <p class="text-xs sm:text-sm text-slate-500">
+                            Angemeldete Sats:
+                            <span class="font-semibold text-slate-900">{{ sats|length }}</span>
+                        </p>
+                        <p class="text-[0.7rem] sm:text-xs text-slate-400">
+                            Live-Status per WebSocket – neue Satelliten erscheinen nach einem Reload.
+                        </p>
+                    </div>
+
+                    <!-- Live-Status-Legende -->
+                    <div class="flex flex-col items-start sm:items-end gap-2 text-[0.7rem] sm:text-xs text-slate-500">
+                        <div class="inline-flex items-center rounded-full bg-slate-900 text-slate-50 px-2.5 py-0.5 text-[0.7rem] font-semibold">
+                            {{ sats|length }} Sat-Objekte
+                        </div>
+                        <div class="flex flex-wrap gap-3 items-center">
+                            <span class="inline-flex items-center gap-1">
+                                <span class="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+                                <span>WS online</span>
+                            </span>
+                            <span class="inline-flex items-center gap-1">
+                                <span class="inline-block h-2.5 w-2.5 rounded-full bg-slate-400"></span>
+                                <span>registriert</span>
+                            </span>
+                            <span class="inline-flex items-center gap-1">
+                                <span class="inline-block h-2.5 w-2.5 rounded-full bg-rose-400"></span>
+                                <span>nur Config</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {% if sats|length == 0 %}
+                    <!-- Empty-State -->
+                    <div
+                        class="mt-2 rounded-xl border border-dashed border-slate-300 bg-slate-50/80 px-4 py-4 text-xs sm:text-sm text-slate-500">
+                        Bisher hat sich noch kein Sat registriert.<br>
+                        Starte einen Sat-Agenten, damit er sich beim Hub meldet.
+                    </div>
+                {% else %}
+                    <!-- Tabelle -->
+                    <div class="mt-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full table-fixed text-left text-xs sm:text-sm">
+                                <!-- Spaltenbreiten, damit links nicht gestaucht -->
+                                <colgroup>
+                                    <col class="w-1/4">
+                                    <col class="w-1/4">
+                                    <col class="w-2/5">
+                                    <col class="w-[90px]">
+                                </colgroup>
+
+                                <thead class="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-3 py-2 font-semibold text-slate-500 whitespace-nowrap">
+                                        Sat & Status
+                                    </th>
+                                    <th class="px-3 py-2 font-semibold text-slate-500 whitespace-nowrap">
+                                        Management
+                                    </th>
+                                    <th class="px-3 py-2 font-semibold text-slate-500 whitespace-nowrap">
+                                        Interfaces
+                                    </th>
+                                    <th class="px-3 py-2 font-semibold text-slate-500 text-right whitespace-nowrap">
+                                        Aktionen
+                                    </th>
+                                </tr>
+                                </thead>
+
+                                <tbody class="divide-y divide-slate-100">
+                                {% for item in sats %}
+                                    <tr class="hover:bg-slate-50 align-top" data-sat-id="{{ item.sat_id }}">
+                                        <!-- Sat-Info -->
+                                        <td class="px-3 py-3">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <!-- Sat-ID -->
+                                                <div class="text-xs sm:text-sm font-medium text-slate-900">
+                                                    {{ item.sat_id }}
+                                                </div>
+
+                                                <!-- Status-Punkt (wird per WebSocket live aktualisiert) -->
+                                                <span
+                                                    data-role="sat-status-badge"
+                                                    class="inline-block h-2.5 w-2.5 rounded-full
+                                                    {% if item.meta.client_ip %}
+                                                        bg-emerald-500
+                                                    {% elif item.meta %}
+                                                        bg-slate-400
+                                                    {% else %}
+                                                        bg-rose-400
+                                                    {% endif %}
+                                                    ">
+                                                </span>
+                                            </div>
+
+                                            <div class="space-y-0.5 text-[0.7rem] sm:text-xs text-slate-500">
+                                                <div>
+                                                    <span class="font-medium text-slate-600">Hostname:</span>
+                                                    {% if item.meta.hostname %}
+                                                        {{ item.meta.hostname }}
+                                                    {% else %}
+                                                        <span class="text-slate-400">(unbekannt)</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div>
+                                                    <span class="font-medium text-slate-600">Version:</span>
+                                                    {% if item.meta.software_version %}
+                                                        {{ item.meta.software_version }}
+                                                    {% else %}
+                                                        <span class="text-slate-400">(unbekannt)</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div>
+                                                    <span class="font-medium text-slate-600">Letzte Registrierung:</span>
+                                                    {% if item.meta.last_register %}
+                                                        <span class="dt" data-dt="{{ item.meta.last_register }}">{{ item.meta.last_register }}</span>
+                                                    {% else %}
+                                                        <span class="text-slate-400">(n/a)</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div>
+                                                    <span class="font-medium text-slate-600">Letzte Aktivität:</span>
+                                                    <span class="text-slate-400" data-role="last-ws-activity">(keine Daten)</span>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <!-- Management -->
+                                        <td class="px-3 py-3">
+                                            <div class="grid grid-cols-1 gap-1 text-[0.7rem] sm:text-xs text-slate-600">
+                                                <div>
+                                                    <span class="font-medium text-slate-600">Interface:</span>
+                                                    {% if item.meta.mgmt_interface %}
+                                                        <span class="font-mono text-slate-900">
+                                                            {{ item.meta.mgmt_interface }}
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="text-slate-400">(unbekannt)</span>
+                                                    {% endif %}
+                                                </div>
+
+                                                <div>
+                                                    <span class="font-medium text-slate-600">IP-Modus:</span>
+                                                    {% if item.meta.mgmt_ip_mode %}
+                                                        <span class="font-mono text-slate-900">
+                                                            {{ item.meta.mgmt_ip_mode }}
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="text-slate-400">(unbekannt)</span>
+                                                    {% endif %}
+                                                </div>
+
+                                                <div>
+                                                    <span class="font-medium text-slate-600">Mgmt-IP:</span>
+                                                    {% if item.meta.mgmt_ip_address %}
+                                                        <span class="font-mono text-slate-900">
+                                                            {{ item.meta.mgmt_ip_address }}
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="text-slate-400">(unbekannt)</span>
+                                                    {% endif %}
+                                                </div>
+
+                                                <div>
+                                                    <span class="font-medium text-slate-600">Source-IP:</span>
+                                                    {% if item.meta.client_ip %}
+                                                        <span class="font-mono text-slate-900">
+                                                            {{ item.meta.client_ip }}
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="text-slate-400">(n/a)</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <!-- Interfaces -->
+                                        <td class="px-3 py-3">
+                                            {% if item.config and item.config.interfaces %}
+                                                <div class="flex flex-wrap gap-1">
+                                                    {% for iface in item.config.interfaces %}
+                                                        <span class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[0.65rem] sm:text-xs text-slate-700">
+                                                            <!-- Name + optional VLAN -->
+                                                            <span class="font-mono">
+                                                                {{ iface.name }}
+                                                                {% if iface.vlan_id is not none %}
+                                                                    (V{{ iface.vlan_id }})
+                                                                {% endif %}
+                                                            </span>
+
+                                                            {% if iface.mode %}
+                                                                <span class="text-slate-400">·</span>
+                                                                <span>{{ iface.mode }}</span>
+                                                            {% endif %}
+
+                                                            {% if iface.ip_mode %}
+                                                                <span class="text-slate-400">·</span>
+                                                                <span class="font-mono">{{ iface.ip_mode }}</span>
+                                                            {% endif %}
+
+                                                            {% if iface.ip_address %}
+                                                                <span class="text-slate-400">·</span>
+                                                                <span class="font-mono">{{ iface.ip_address }}</span>
+                                                            {% endif %}
+                                                        </span>
+                                                    {% endfor %}
+                                                </div>
+                                            {% else %}
+                                                <span class="text-[0.7rem] sm:text-xs text-slate-400">
+                                                    Keine Interfaces konfiguriert.
+                                                </span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- Aktionen -->
+                                        <td class="px-3 py-3 text-right align-top">
+                                            <div class="flex flex-col sm:flex-row gap-1 justify-end">
+                                                <a
+                                                    href="/ui/services?sat_id={{ item.sat_id }}"
+                                                    class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-2 py-1 text-[0.7rem] sm:text-xs font-medium text-slate-700 hover:bg-slate-50">
+                                                    Services
+                                                </a>
+                                                <a
+                                                    href="/ui/sats/{{ item.sat_id }}/edit"
+                                                    class="inline-flex items-center rounded-lg bg-slate-900 px-2 py-1 text-[0.7rem] sm:text-xs font-medium text-slate-50 hover:bg-slate-800">
+                                                    Edit&nbsp;Config
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                {% endif %}
+            </section>
+        </div>
+    </main>
+</div>
+
+<!-- Datum/Uhrzeit hübsch darstellen -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".dt").forEach(el => {
+        const raw = el.dataset.dt;
+        if (!raw) return;
+
+        const date = new Date(raw);
+        if (isNaN(date.getTime())) return;
+
+        const formatted = date.toLocaleString("de-DE", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit"
+        });
+
+        el.textContent = formatted;
+    });
+});
+</script>
+
+<!-- WebSocket: Live-Status der Sats -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const protocol = (location.protocol === "https:") ? "wss" : "ws";
+    const wsUrl = protocol + "://" + location.host + "/ws/hub-status";
+    const ws = new WebSocket(wsUrl);
+
+    function updateRow(status) {
+        const satId = status.sat_id;
+        if (!satId) return;
+
+        const row = document.querySelector(`tr[data-sat-id="${satId}"]`);
+        if (!row) return;
+
+        const badge = row.querySelector("[data-role='sat-status-badge']");
+        if (badge) {
+            if (status.ws_connected) {
+                badge.className = "inline-block h-2.5 w-2.5 rounded-full bg-emerald-500";
+            } else {
+                badge.className = "inline-block h-2.5 w-2.5 rounded-full bg-slate-400";
+            }
+        }
+
+        const lastWsEl = row.querySelector("[data-role='last-ws-activity']");
+        if (lastWsEl && status.last_ws_activity) {
+            const date = new Date(status.last_ws_activity);
+            if (!isNaN(date.getTime())) {
+                lastWsEl.textContent = date.toLocaleString("de-DE", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit"
+                });
+            } else {
+                lastWsEl.textContent = status.last_ws_activity;
+            }
+        }
+    }
+
+    ws.addEventListener("message", (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.type === "sat.snapshot") {
+                (data.payload || []).forEach(updateRow);
+            } else if (data.type === "sat.status") {
+                updateRow(data.payload || {});
+            }
+        } catch (e) {
+            console.error("Fehler beim Verarbeiten von WS-Daten:", e);
+        }
+    });
+
+    ws.addEventListener("open", () => {
+        console.log("Hub-Status-WS verbunden.");
+    });
+
+    ws.addEventListener("close", () => {
+        console.log("Hub-Status-WS geschlossen.");
+        // hier könntest du noch Reconnect-Logik einbauen
+    });
+});
+</script>
+
+</body>
+</html>
