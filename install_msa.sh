@@ -366,7 +366,7 @@ ensure_manage_script() {
 
 configure_sat_bootstrap_values() {
   local target="$1"
-  local host sat_default sat_id
+  local host sat_default sat_id hub_url
 
   host="$(default_hostname_token)"
   sat_default="$(generate_default_sat_id "$host")"
@@ -377,9 +377,12 @@ configure_sat_bootstrap_values() {
     sat_id="$sat_default"
   fi
 
+  ask_input "[SAT] HUB-URL setzen (ohne Slash am Ende)" "http://hub.example.local:8080" hub_url
+
   run_step "SAT-ID in sat_config.yaml setzen" set_yaml_value "$target" "sat_id" "$sat_id" || return 1
   run_step "Hostname in sat_config.yaml setzen" set_yaml_value "$target" "hostname" "$host" || return 1
-  add_summary "SAT Konfiguration aktiv: $target (sat_id=$sat_id, hostname=$host)"
+  run_step "HUB-URL in sat_config.yaml setzen" set_yaml_value "$target" "hub_url" "$hub_url" || return 1
+  add_summary "SAT Konfiguration aktiv: $target (sat_id=$sat_id, hostname=$host, hub_url=$hub_url)"
 }
 
 configure_sat_security_values() {
