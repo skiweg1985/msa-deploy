@@ -6,7 +6,7 @@
 sat_id: "oe-msa-03"
 
 # Basis-URL des Hubs (ohne Slash am Ende)
-hub_url: "http://172.30.14.50:8080"
+hub_url: "http://hub.example.local:8080"
 
 # Shared Secret für Authentifizierung am Hub (X-Satellite-Token)
 shared_secret: "supergeheim"
