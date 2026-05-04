@@ -55,6 +55,7 @@ class SatInterface(BaseModel):
     Ein *beliebiges* Interface des Sats: Mgmt, VLAN, Bond, usw.
     """
     name: str                       # z.B. "eth0", "eth0.30"
+    parent_interface: Optional[str] = None
     vlan_id: Optional[int] = None   # optional, nur Doku/Zweck
     description: Optional[str] = None
 

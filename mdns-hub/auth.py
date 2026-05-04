@@ -42,6 +42,7 @@ class AuthSettings:
     session_ttl_seconds: int
     cookie_secure: bool
     allowed_origins: list[str]
+    allow_all_origins_for_dev: bool
 
 
 @dataclass(slots=True)
@@ -269,6 +270,9 @@ class AuthManager:
 
     def is_origin_allowed(self, origin: str | None, host: str | None, secure: bool) -> bool:
         if not origin:
+            return True
+
+        if self.settings.allow_all_origins_for_dev:
             return True
 
         allowed = set(self.settings.allowed_origins)

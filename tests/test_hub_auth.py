@@ -226,3 +226,62 @@ def test_api_access_guard_deny_by_default(tmp_path: Path):
     )
     sat_token_response = asyncio.run(module.api_access_guard(sat_token_request, call_next))
     assert sat_token_response.status_code == 200
+
+
+def test_sat_interface_parent_interface_is_optional_and_exposed_in_api(tmp_path: Path):
+    module = load_hub_module(tmp_path)
+
+    legacy_cfg = module.SatConfig.model_validate(
+        {
+            "satellite_id": "sat-legacy",
+            "interfaces": [
+                {
+                    "name": "ens160",
+                    "mode": "scan",
+                    "ip_mode": "dhcp",
+                },
+                {
+                    "name": "ens160.230",
+                    "mode": "advertise",
+                    "vlan_id": 230,
+                    "description": "Mobile",
+                },
+            ],
+        }
+    )
+
+    assert legacy_cfg.interfaces[1].parent_interface is None
+
+    module.SATELLITES["sat-legacy"] = module.SatMeta(
+        hostname="sat-legacy.local",
+        mgmt_interface="ens160",
+    )
+    module.SATELLITE_CONFIGS["sat-legacy"] = module.SatConfig(
+        satellite_id="sat-legacy",
+        interfaces=[
+            module.SatInterface(
+                name="ens160",
+                mode="scan",
+                ip_mode="dhcp",
+                ip_address=None,
+                description="Mgmt",
+            ),
+            module.SatInterface(
+                name="ens160.230",
+                parent_interface="ens160",
+                mode="advertise",
+                vlan_id=230,
+                ip_mode="none",
+                ip_address=None,
+                description="Mobile",
+            ),
+        ],
+    )
+
+    payload = module.api_sat_interfaces()
+    sat_payload = next(item for item in payload if item["sat_id"] == "sat-legacy")
+
+    assert sat_payload["interfaces"][0]["parent_interface"] is None
+    assert sat_payload["interfaces"][0]["description"] == "Mgmt"
+    assert sat_payload["interfaces"][1]["parent_interface"] == "ens160"
+    assert sat_payload["interfaces"][1]["description"] == "Mobile"

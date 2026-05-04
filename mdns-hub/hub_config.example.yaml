@@ -30,6 +30,9 @@ security:
   session_secret: "change-this-random-session-secret"
   session_ttl_seconds: 28800
   session_cookie_secure: false
+  # Testing only: allow cross-origin browser auth from any Origin.
+  # Never enable in production.
+  allow_all_origins_for_dev: false
   allowed_origins:
     - "http://localhost:5173"
 

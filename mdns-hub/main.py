@@ -102,6 +102,7 @@ templates = Jinja2Templates(directory="templates")
 
 UI_AUTH_ENABLED = get_security_bool("ui_auth_enabled", True)
 ALLOWED_ORIGINS = get_security_list("allowed_origins", [])
+ALLOW_ALL_ORIGINS_FOR_DEV = get_security_bool("allow_all_origins_for_dev", False)
 
 AUTH_MANAGER = AuthManager(
     AuthSettings(
@@ -113,12 +114,14 @@ AUTH_MANAGER = AuthManager(
         session_ttl_seconds=get_security_int("session_ttl_seconds", 28800),
         cookie_secure=get_security_bool("session_cookie_secure", False),
         allowed_origins=ALLOWED_ORIGINS,
+        allow_all_origins_for_dev=ALLOW_ALL_ORIGINS_FOR_DEV,
     )
 )
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS if UI_AUTH_ENABLED else ["*"],
+    allow_origin_regex=".*" if (UI_AUTH_ENABLED and ALLOW_ALL_ORIGINS_FOR_DEV) else None,
     allow_credentials=UI_AUTH_ENABLED,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -189,9 +192,14 @@ SAT_GROUPS: Dict[str, Dict] = {}
 
 SHARED_SECRET = get_security_value("shared_secret", "changeme")
 
-if UI_AUTH_ENABLED and not ALLOWED_ORIGINS:
+if UI_AUTH_ENABLED and not ALLOWED_ORIGINS and not ALLOW_ALL_ORIGINS_FOR_DEV:
     logger.warning(
         "UI auth is enabled without configured security.allowed_origins; only same-origin browser access will work"
+    )
+
+if UI_AUTH_ENABLED and ALLOW_ALL_ORIGINS_FOR_DEV:
+    logger.warning(
+        "security.allow_all_origins_for_dev=true enables permissive cross-origin auth for testing only"
     )
 
 # Active WS connections: sat_id -> WebSocket
@@ -1072,10 +1080,12 @@ def api_sat_interfaces():
         for iface in cfg.interfaces:
             ifaces.append({
                 "name": iface.name,
+                "parent_interface": iface.parent_interface,
                 "mode": iface.mode,
                 "vlan_id": iface.vlan_id,
                 "ip_mode": iface.ip_mode,
                 "ip_address": iface.ip_address,
+                "description": iface.description,
             })
 
         ws_connected = sat_id in ACTIVE_SAT_WEBSOCKETS
