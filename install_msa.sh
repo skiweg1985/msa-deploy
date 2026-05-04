@@ -190,6 +190,29 @@ ask_input() {
   printf -v "$result_var" "%s" "$answer"
 }
 
+ask_secret_required() {
+  local prompt="$1"
+  local result_var="$2"
+  local answer=""
+
+  if [[ "$INTERACTIVE" != true || "$HAS_TTY" != true ]]; then
+    printf -v "$result_var" "%s" ""
+    return 0
+  fi
+
+  while true; do
+    read -r -s -p "$prompt: " answer || true
+    printf "\n"
+
+    if [[ -n "$answer" ]]; then
+      printf -v "$result_var" "%s" "$answer"
+      return 0
+    fi
+
+    print_warn "Eingabe darf nicht leer sein."
+  done
+}
+
 sanitize_token() {
   local value="${1,,}"
   value="${value//[^a-z0-9-]/-}"
@@ -251,11 +274,41 @@ set_yaml_value() {
   local file="$1"
   local key="$2"
   local value="$3"
+  local escaped
+
+  escaped="$(printf "%s" "$value" | sed -e 's/[\\&|]/\\&/g' -e 's/"/\\"/g')"
 
   if grep -Eq "^${key}:" "$file"; then
-    sed -i -E "s|^${key}:.*$|${key}: \"${value}\"|" "$file"
+    sed -i -E "s|^${key}:.*$|${key}: \"${escaped}\"|" "$file"
   else
-    printf "\n%s: \"%s\"\n" "$key" "$value" >>"$file"
+    printf "\n%s: \"%s\"\n" "$key" "$escaped" >>"$file"
+  fi
+}
+
+set_hub_security_string() {
+  local file="$1"
+  local key="$2"
+  local value="$3"
+  local escaped
+
+  escaped="$(printf "%s" "$value" | sed -e 's/[\\&|]/\\&/g' -e 's/"/\\"/g')"
+
+  if grep -Eq "^[[:space:]]{2}${key}:" "$file"; then
+    sed -i -E "s|^[[:space:]]{2}${key}:.*$|  ${key}: \"${escaped}\"|" "$file"
+  else
+    sed -i -E "/^security:/a\  ${key}: \"${escaped}\"" "$file"
+  fi
+}
+
+set_hub_security_bool() {
+  local file="$1"
+  local key="$2"
+  local value="$3"
+
+  if grep -Eq "^[[:space:]]{2}${key}:" "$file"; then
+    sed -i -E "s|^[[:space:]]{2}${key}:.*$|  ${key}: ${value}|" "$file"
+  else
+    sed -i -E "/^security:/a\  ${key}: ${value}" "$file"
   fi
 }
 
@@ -329,6 +382,64 @@ configure_sat_bootstrap_values() {
   add_summary "SAT Konfiguration aktiv: $target (sat_id=$sat_id, hostname=$host)"
 }
 
+configure_sat_security_values() {
+  local target="$1"
+  local shared_secret=""
+
+  print_section "SAT Security"
+  ask_secret_required "[SAT] Shared Secret fuer Hub-Kommunikation" shared_secret
+
+  if [[ -n "$shared_secret" ]]; then
+    run_step "Shared Secret in sat_config.yaml setzen" set_yaml_value "$target" "shared_secret" "$shared_secret" || return 1
+    add_summary "SAT Shared Secret gesetzt: $target"
+  else
+    add_warning "SAT Shared Secret wurde nicht gesetzt (nicht-interaktiv). Bitte manuell in $target eintragen."
+  fi
+}
+
+configure_hub_security_values() {
+  local target="$1"
+  local ui_auth_enabled="true"
+  local admin_username="admin"
+  local admin_password=""
+  local shared_secret=""
+
+  print_section "HUB Security"
+
+  if ask_yes_no "[HUB] Frontend-Authentifizierung aktivieren?" "y"; then
+    ui_auth_enabled="true"
+    ask_input "[HUB] Admin-Benutzername" "admin" admin_username
+    ask_secret_required "[HUB] Admin-Passwort" admin_password
+  else
+    ui_auth_enabled="false"
+  fi
+
+  ask_secret_required "[HUB] Shared Secret fuer SAT-Kommunikation" shared_secret
+
+  run_step "ui_auth_enabled in hub_config.yaml setzen" set_hub_security_bool "$target" "ui_auth_enabled" "$ui_auth_enabled" || return 1
+
+  if [[ "$ui_auth_enabled" == "true" && -z "$admin_password" ]]; then
+    add_warning "HUB UI-Auth wurde ohne Passwort angefordert. Setze ui_auth_enabled=false (sicherer Default)."
+    ui_auth_enabled="false"
+    run_step "ui_auth_enabled in hub_config.yaml auf false setzen" set_hub_security_bool "$target" "ui_auth_enabled" "false" || return 1
+  fi
+
+  if [[ "$ui_auth_enabled" == "true" ]]; then
+    run_step "admin_username in hub_config.yaml setzen" set_hub_security_string "$target" "admin_username" "$admin_username" || return 1
+    run_step "admin_password in hub_config.yaml setzen" set_hub_security_string "$target" "admin_password" "$admin_password" || return 1
+    add_summary "HUB UI-Auth aktiviert: $target (admin_username=$admin_username)"
+  else
+    add_summary "HUB UI-Auth deaktiviert: $target"
+  fi
+
+  if [[ -n "$shared_secret" ]]; then
+    run_step "shared_secret in hub_config.yaml setzen" set_hub_security_string "$target" "shared_secret" "$shared_secret" || return 1
+    add_summary "HUB Shared Secret gesetzt: $target"
+  else
+    add_warning "HUB Shared Secret wurde nicht gesetzt (nicht-interaktiv). Bitte manuell in $target eintragen."
+  fi
+}
+
 prepare_sat_config() {
   local target="$SAT_DIR/sat_config.yaml"
   local example="$SAT_DIR/sat_config.example.yaml"
@@ -345,10 +456,12 @@ prepare_sat_config() {
     create)
       run_step "SAT Beispielkonfiguration kopieren" copy_file "$example" "$target" || return 1
       configure_sat_bootstrap_values "$target" || return 1
+      configure_sat_security_values "$target" || return 1
       ;;
     overwrite)
       run_step "SAT Konfiguration mit Beispiel ueberschreiben" copy_file "$example" "$target" || return 1
       configure_sat_bootstrap_values "$target" || return 1
+      configure_sat_security_values "$target" || return 1
       ;;
     *)
       print_error "Unbekannte SAT Konfigurationsaktion: $action"
@@ -372,10 +485,12 @@ prepare_hub_config() {
       ;;
     create)
       run_step "HUB Beispielkonfiguration kopieren" copy_file "$example" "$target" || return 1
+      configure_hub_security_values "$target" || return 1
       add_summary "HUB Konfiguration erstellt: $target"
       ;;
     overwrite)
       run_step "HUB Konfiguration mit Beispiel ueberschreiben" copy_file "$example" "$target" || return 1
+      configure_hub_security_values "$target" || return 1
       add_summary "HUB Konfiguration ueberschrieben: $target"
       ;;
     *)
