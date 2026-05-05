@@ -285,3 +285,72 @@ def test_sat_interface_parent_interface_is_optional_and_exposed_in_api(tmp_path:
     assert sat_payload["interfaces"][0]["description"] == "Mgmt"
     assert sat_payload["interfaces"][1]["parent_interface"] == "ens160"
     assert sat_payload["interfaces"][1]["description"] == "Mobile"
+
+
+def test_api_sat_interfaces_exposes_mgmt_ip_and_client_ip(tmp_path: Path):
+    module = load_hub_module(tmp_path)
+
+    # Case 1: explicit mgmt_ip_address + client_ip recorded in SatMeta.
+    module.SATELLITES["sat-explicit"] = module.SatMeta(
+        hostname="sat-explicit.local",
+        mgmt_interface="eth0",
+        mgmt_ip_address="10.0.0.10",
+        mgmt_ip_mode="static",
+        client_ip="10.0.0.99",
+    )
+    module.SATELLITE_CONFIGS["sat-explicit"] = module.SatConfig(
+        satellite_id="sat-explicit",
+        interfaces=[
+            module.SatInterface(
+                name="eth0",
+                mode="scan",
+                ip_mode="static",
+                ip_address="10.0.0.10",
+                description="Mgmt",
+            ),
+        ],
+    )
+
+    # Case 2: no explicit mgmt_ip_address - fallback must use the interface
+    # entry whose name matches the mgmt interface.
+    module.SATELLITES["sat-fallback"] = module.SatMeta(
+        hostname="sat-fallback.local",
+        mgmt_interface="ens160",
+    )
+    module.SATELLITE_CONFIGS["sat-fallback"] = module.SatConfig(
+        satellite_id="sat-fallback",
+        interfaces=[
+            module.SatInterface(
+                name="ens160",
+                mode="scan",
+                ip_mode="static",
+                ip_address="192.168.1.42",
+                description="Mgmt",
+            ),
+        ],
+    )
+
+    # Case 3: no mgmt IP at all - must be reported as None, not missing.
+    module.SATELLITES["sat-blank"] = module.SatMeta(
+        hostname="sat-blank.local",
+        mgmt_interface=None,
+    )
+
+    payload = module.api_sat_interfaces()
+    by_id = {item["sat_id"]: item for item in payload}
+
+    explicit = by_id["sat-explicit"]
+    assert "mgmt_ip_address" in explicit
+    assert "client_ip" in explicit
+    assert explicit["mgmt_ip_address"] == "10.0.0.10"
+    assert explicit["client_ip"] == "10.0.0.99"
+
+    fallback = by_id["sat-fallback"]
+    # Derived from the matching interface as documented inline in
+    # api_sat_interfaces (safe fallback for legacy registrations).
+    assert fallback["mgmt_ip_address"] == "192.168.1.42"
+    assert fallback["client_ip"] is None
+
+    blank = by_id["sat-blank"]
+    assert blank["mgmt_ip_address"] is None
+    assert blank["client_ip"] is None

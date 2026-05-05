@@ -3,6 +3,8 @@
     "sat_id": "mdns-sat-2",
     "hostname": "mdns-sat-2",
     "mgmt_interface": "ens160",
+    "mgmt_ip_address": "192.168.177.99",
+    "client_ip": "192.168.177.99",
     "physical_interfaces": ["ens160"],
     "interfaces": [
       {
@@ -21,6 +23,8 @@
     "sat_id": "mdns-sat-guest",
     "hostname": null,
     "mgmt_interface": null,
+    "mgmt_ip_address": null,
+    "client_ip": "192.168.222.104",
     "physical_interfaces": ["ens160"],
     "interfaces": [
       {
@@ -39,6 +43,8 @@
     "sat_id": "msa-sat-pi",
     "hostname": "msa-sat-pi",
     "mgmt_interface": "eth0",
+    "mgmt_ip_address": "192.168.177.112",
+    "client_ip": "192.168.177.112",
     "physical_interfaces": ["eth0"],
     "interfaces": [
       {

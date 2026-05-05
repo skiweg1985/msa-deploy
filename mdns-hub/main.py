@@ -1073,14 +1073,20 @@ def api_sat_interfaces():
             hostname = meta.hostname
             mgmt_if = meta.mgmt_interface
             physical_ifs = meta.physical_interfaces
+            mgmt_ip_address = meta.mgmt_ip_address
+            client_ip = meta.client_ip
         elif isinstance(meta, dict):
             hostname = meta.get("hostname")
             mgmt_if = meta.get("mgmt_interface")
             physical_ifs = meta.get("physical_interfaces")
+            mgmt_ip_address = meta.get("mgmt_ip_address")
+            client_ip = meta.get("client_ip")
         else:
             hostname = None
             mgmt_if = None
             physical_ifs = None
+            mgmt_ip_address = None
+            client_ip = None
 
         if isinstance(physical_ifs, list):
             physical_out = [str(x) for x in physical_ifs if x is not None and str(x).strip()]
@@ -1104,10 +1110,22 @@ def api_sat_interfaces():
         last_ws_hello = ws_state.get("last_hello")
         last_telemetry = ws_state.get("last_telemetry")
 
+        # Fallback: if no explicit mgmt IP was registered, try to derive it
+        # from the interface entry whose name matches the mgmt interface. This
+        # keeps the UI usable for satellites that registered before the
+        # mgmt_ip_address field was added without re-registering.
+        if not mgmt_ip_address and mgmt_if:
+            for iface in cfg.interfaces:
+                if iface.name == mgmt_if and iface.ip_address:
+                    mgmt_ip_address = iface.ip_address
+                    break
+
         result.append({
             "sat_id": sat_id,
             "hostname": hostname,
             "mgmt_interface": mgmt_if,
+            "mgmt_ip_address": mgmt_ip_address,
+            "client_ip": client_ip,
             "physical_interfaces": physical_out,
             "interfaces": ifaces,
             "ws_connected": ws_connected,
