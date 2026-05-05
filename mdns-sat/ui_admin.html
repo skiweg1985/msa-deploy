@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MSA SAT Admin</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 16px; background:#0b1220; color:#e5e7eb; }
+    h1,h2 { margin: 0 0 10px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+    .card { background:#111827; border:1px solid #374151; border-radius:10px; padding:12px; flex:1; min-width:280px; }
+    button { background:#2563eb; color:#fff; border:none; border-radius:8px; padding:8px 12px; cursor:pointer; }
+    button.secondary { background:#374151; }
+    textarea,input { width:100%; background:#0f172a; color:#e5e7eb; border:1px solid #374151; border-radius:6px; padding:6px; }
+    pre { background:#0f172a; border:1px solid #374151; border-radius:8px; padding:8px; overflow:auto; max-height:320px; }
+    .muted { color:#9ca3af; font-size:12px; }
+    .ok { color:#34d399; }
+    .err { color:#f87171; }
+  </style>
+</head>
+<body>
+  <h1>MSA - mDNS Service Atlas / SAT Admin</h1>
+  <div class="row">
+    <a href="/ui" style="color:#93c5fd;text-decoration:none">← Zur Service-Übersicht</a>
+  </div>
+  <div class="row">
+    <button onclick="reloadAll()">Reload All</button>
+    <button class="secondary" onclick="restartWorkers()">mDNS Worker neu starten</button>
+    <span id="status" class="muted">Bereit.</span>
+  </div>
+
+  <div class="row">
+    <div class="card"><h2>Overview</h2><pre id="overview">lädt…</pre></div>
+    <div class="card"><h2>Spoofing</h2><pre id="spoofing">lädt…</pre></div>
+  </div>
+
+  <div class="row">
+    <div class="card"><h2>Metrics</h2><pre id="metrics">lädt…</pre></div>
+    <div class="card">
+      <h2>Settings</h2>
+      <div class="muted">Editierbar (JSON):</div>
+      <textarea id="settingsEditable" rows="12"></textarea>
+      <div class="muted" style="margin-top:8px">Read-only:</div>
+      <pre id="settingsReadonly">-</pre>
+      <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+        <label><input type="checkbox" id="applyNow" /> apply now (restart workers)</label>
+      </div>
+      <div style="margin-top:8px; display:flex; gap:8px;">
+        <button onclick="saveSettings()">Settings speichern</button>
+        <button class="secondary" onclick="loadSettings()">Neu laden</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const setStatus = (msg, ok=true) => {
+      const el = $("status");
+      el.textContent = msg;
+      el.className = ok ? "ok" : "err";
+    };
+
+    async function getJSON(url, opts={}) {
+      const r = await fetch(url, opts);
+      if (!r.ok) throw new Error(`${url}: ${r.status}`);
+      return await r.json();
+    }
+
+    async function loadOverview() {
+      const d = await getJSON('/admin/overview');
+      $('overview').textContent = JSON.stringify(d, null, 2);
+    }
+
+    async function loadSpoofing() {
+      const d = await getJSON('/admin/spoofing');
+      $('spoofing').textContent = JSON.stringify(d, null, 2);
+    }
+
+    async function loadMetrics() {
+      const d = await getJSON('/admin/metrics');
+      $('metrics').textContent = JSON.stringify(d, null, 2);
+    }
+
+    async function loadSettings() {
+      const d = await getJSON('/admin/settings');
+      $('settingsEditable').value = JSON.stringify(d.editable || {}, null, 2);
+      $('settingsReadonly').textContent = JSON.stringify(d.readonly || {}, null, 2);
+    }
+
+    async function saveSettings() {
+      try {
+        const editable = JSON.parse($('settingsEditable').value || '{}');
+        const applyNow = $('applyNow').checked;
+        const d = await getJSON('/admin/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ settings: editable, apply_now: applyNow })
+        });
+        $('settingsEditable').value = JSON.stringify(d.settings?.editable || editable, null, 2);
+        $('settingsReadonly').textContent = JSON.stringify(d.settings?.readonly || {}, null, 2);
+        setStatus('Settings gespeichert.', true);
+      } catch (e) {
+        setStatus(`Save fehlgeschlagen: ${e.message}`, false);
+      }
+    }
+
+    async function restartWorkers() {
+      if (!confirm('mDNS Worker wirklich neu starten?')) return;
+      try {
+        const d = await getJSON('/admin/actions/restart-workers', { method: 'POST' });
+        setStatus(`Worker restart ok (${d.started_workers || 0} started)`, true);
+        await reloadAll();
+      } catch (e) {
+        setStatus(`Restart fehlgeschlagen: ${e.message}`, false);
+      }
+    }
+
+    async function reloadAll() {
+      try {
+        await Promise.all([loadOverview(), loadSpoofing(), loadMetrics(), loadSettings()]);
+        setStatus(`Aktualisiert: ${new Date().toLocaleTimeString()}`, true);
+      } catch (e) {
+        setStatus(`Reload fehlgeschlagen: ${e.message}`, false);
+      }
+    }
+
+    reloadAll();
+  </script>
+</body>
+</html>

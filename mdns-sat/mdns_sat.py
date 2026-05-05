@@ -583,6 +583,14 @@ def ui_root(_auth_ok: bool = Depends(require_ui_auth)):
     return HTMLResponse("<h1>UI file ui.html not found</h1>", status_code=404)
 
 
+@app.get("/ui/admin", response_class=HTMLResponse)
+def ui_admin(_auth_ok: bool = Depends(require_ui_auth)):
+    ui_path = BASE_DIR / "ui_admin.html"
+    if ui_path.exists():
+        return FileResponse(str(ui_path))
+    return HTMLResponse("<h1>UI file ui_admin.html not found</h1>", status_code=404)
+
+
 def start_api_server():
     """
     Startet den lokalen FastAPI-Server im Sat.
