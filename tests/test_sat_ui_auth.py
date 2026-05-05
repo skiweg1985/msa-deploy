@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 from fastapi import HTTPException
+from fastapi.testclient import TestClient
 from fastapi.security import HTTPBasicCredentials
 
 
@@ -28,7 +29,7 @@ def test_sat_ui_auth_disabled_allows_inbound_requests():
         mdns_sat.SAT_CONFIG.clear()
         mdns_sat.SAT_CONFIG.update({"ui_auth_enabled": False})
         auth_ok = mdns_sat.require_ui_auth(None)
-        payload = mdns_sat.api_health(auth_ok)
+        payload = mdns_sat.api_health()
     finally:
         mdns_sat.SAT_CONFIG.clear()
         mdns_sat.SAT_CONFIG.update(original_cfg)
@@ -85,6 +86,31 @@ def test_sat_ui_auth_enabled_rejects_wrong_credentials():
     assert exc_info.value.headers["WWW-Authenticate"] == "Basic"
 
 
+def test_health_endpoint_is_public_even_when_ui_auth_enabled():
+    original_cfg = dict(mdns_sat.SAT_CONFIG)
+    try:
+        mdns_sat.SAT_CONFIG.clear()
+        mdns_sat.SAT_CONFIG.update(
+            {
+                "sat_id": "sat-a",
+                "hub_url": "http://hub.local",
+                "publish_to_hub": False,
+                "hub_register_enabled": False,
+                "ui_auth_enabled": True,
+                "ui_auth_username": "admin",
+                "ui_auth_password": "secret123",
+            }
+        )
+
+        with TestClient(mdns_sat.app) as client:
+            response = client.get("/health")
+    finally:
+        mdns_sat.SAT_CONFIG.clear()
+        mdns_sat.SAT_CONFIG.update(original_cfg)
+
+    assert response.status_code == 200
+
+
 def test_sat_ui_auth_enabled_accepts_correct_credentials():
     original_cfg = dict(mdns_sat.SAT_CONFIG)
     try:
@@ -106,7 +132,7 @@ def test_sat_ui_auth_enabled_accepts_correct_credentials():
             password="secret123",
         )
         auth_ok = mdns_sat.require_ui_auth(credentials)
-        payload = mdns_sat.api_health(auth_ok)
+        payload = mdns_sat.api_health()
     finally:
         mdns_sat.SAT_CONFIG.clear()
         mdns_sat.SAT_CONFIG.update(original_cfg)

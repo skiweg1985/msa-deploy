@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 import requests
 import uvicorn
 import yaml
-from fastapi import Depends, FastAPI, HTTPException, Query, status
+from fastapi import Body, Depends, FastAPI, HTTPException, Query, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse
@@ -49,6 +49,13 @@ from mdns_mode import (
     resolve_interface_configs,
     validate_sat_config,
 )
+from sat_admin import (
+    ADMIN_STATS,
+    build_admin_settings_payload,
+    persist_sat_config,
+    utc_now_iso,
+    validate_admin_settings_payload,
+)
 
 ws_client: Optional[SatWebSocketClient] = None
 ws_stop_event: Optional[threading.Event] = None
@@ -56,6 +63,7 @@ ws_stop_event: Optional[threading.Event] = None
 
 BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_CONFIG_PATH = Path("sat_config.yaml")
+SAT_CONFIG_PATH = DEFAULT_CONFIG_PATH
 
 MCAST_GRP = "224.0.0.251"
 MDNS_PORT = 5353
@@ -74,6 +82,7 @@ SAT_CONFIG: Dict[str, Any] = {}
 
 # Worker-State: pro Interface ein MdnsInterfaceWorker
 mdns_workers: Dict[str, Dict[str, Any]] = {}
+WORKER_LOCK = threading.Lock()
 
 # Globales Flag: wurde ein Shutdown angefordert?
 SHUTDOWN_REQUESTED = False
@@ -102,20 +111,21 @@ def shutdown_workers():
     """
     global mdns_workers
 
-    if not mdns_workers:
-        return
+    with WORKER_LOCK:
+        if not mdns_workers:
+            return
 
-    logger.info("[SHUTDOWN] Stoppe alle MdnsInterfaceWorker ...")
-    for iface, worker in list(mdns_workers.items()):
-        logger.info(f"[SHUTDOWN] Stoppe MdnsInterfaceWorker auf Interface {iface}")
-        try:
-            worker["stop_event"].set()
-            if worker["thread"].is_alive():
-                worker["thread"].join(timeout=5)
-        except Exception as e:
-            logger.warning(f"[SHUTDOWN] Fehler beim Stoppen von Worker {iface}: {e}")
+        logger.info("[SHUTDOWN] Stoppe alle MdnsInterfaceWorker ...")
+        for iface, worker in list(mdns_workers.items()):
+            logger.info(f"[SHUTDOWN] Stoppe MdnsInterfaceWorker auf Interface {iface}")
+            try:
+                worker["stop_event"].set()
+                if worker["thread"].is_alive():
+                    worker["thread"].join(timeout=5)
+            except Exception as e:
+                logger.warning(f"[SHUTDOWN] Fehler beim Stoppen von Worker {iface}: {e}")
 
-    mdns_workers.clear()
+        mdns_workers.clear()
     logger.info("[SHUTDOWN] Alle MdnsInterfaceWorker gestoppt.")
 
 
@@ -172,6 +182,139 @@ def require_ui_auth(
     )
 
 
+def _normalize_last_error(err: Any) -> Optional[Dict[str, Any]]:
+    if err is None:
+        return None
+    if isinstance(err, dict):
+        return {
+            "time": err.get("time"),
+            "msg": err.get("msg") or str(err),
+        }
+    return {"time": None, "msg": str(err)}
+
+
+def _worker_snapshot() -> Dict[str, Any]:
+    with WORKER_LOCK:
+        items = []
+        for iface, entry in mdns_workers.items():
+            worker_obj = entry.get("worker")
+            current_services = getattr(worker_obj, "current_services", {}) or {}
+            conflict_keys = getattr(worker_obj, "conflict_keys", set()) or set()
+            items.append(
+                {
+                    "iface": iface,
+                    "mode": entry.get("mode"),
+                    "alive": bool(entry.get("thread") and entry["thread"].is_alive()),
+                    "spoofed_services": len(current_services),
+                    "conflict_count": len(conflict_keys),
+                }
+            )
+    items.sort(key=lambda item: item["iface"])
+    return {
+        "count": len(items),
+        "workers": items,
+    }
+
+
+def _build_desired_ifaces(cfg: Dict[str, Any]) -> Dict[str, Any]:
+    interfaces = resolve_interface_configs(cfg)
+    desired_entries: List[Dict[str, str]] = []
+    skipped: List[Dict[str, str]] = []
+
+    if cfg.get("manage_vlan_interfaces", True):
+        for iface_cfg in interfaces:
+            ensure_vlan_subinterface(iface_cfg)
+
+    for iface_cfg in interfaces:
+        name = iface_cfg.get("name")
+        mode = (iface_cfg.get("mode") or "none").lower()
+        if not name:
+            continue
+
+        if wants_sniff(mode) or wants_advertise(mode):
+            if interface_is_ready(name):
+                desired_entries.append({"name": name, "mode": mode})
+            else:
+                skipped.append({"name": name, "mode": mode})
+
+    if cfg.get("manage_vlan_interfaces", True):
+        cleanup_vlan_subinterfaces(interfaces)
+
+    return {
+        "interfaces": interfaces,
+        "desired_entries": desired_entries,
+        "skipped": skipped,
+    }
+
+
+def _stop_worker_entry(iface: str, entry: Dict[str, Any], reason: str) -> None:
+    logger.info("Stoppe MdnsInterfaceWorker auf Interface %s (%s).", iface, reason)
+    try:
+        entry["stop_event"].set()
+        if entry["thread"].is_alive():
+            entry["thread"].join(timeout=5)
+    except Exception as exc:
+        ADMIN_STATS.increment("errors_total")
+        logger.warning("[SHUTDOWN] Fehler beim Stoppen von Worker %s: %s", iface, exc)
+
+
+def restart_workers_from_runtime_config(reason: str = "manual") -> Dict[str, Any]:
+    started_at = time.time()
+    desired_state = _build_desired_ifaces(SAT_CONFIG)
+    desired_entries = desired_state["desired_entries"]
+    skipped = desired_state["skipped"]
+    restarted = 0
+    stopped = 0
+    started = 0
+    errors: List[str] = []
+
+    with WORKER_LOCK:
+        for iface, entry in list(mdns_workers.items()):
+            _stop_worker_entry(iface, entry, reason)
+            stopped += 1
+            mdns_workers.pop(iface, None)
+
+        for item in desired_entries:
+            name = item["name"]
+            mode = item["mode"]
+            try:
+                stop_event = threading.Event()
+                worker_obj = MdnsInterfaceWorker(
+                    SAT_CONFIG,
+                    iface=name,
+                    mode=mode,
+                    stop_event=stop_event,
+                )
+                thread = threading.Thread(target=worker_obj.run, daemon=True)
+                thread.start()
+                mdns_workers[name] = {
+                    "thread": thread,
+                    "stop_event": stop_event,
+                    "worker": worker_obj,
+                    "mode": mode,
+                }
+                started += 1
+            except Exception as exc:
+                ADMIN_STATS.increment("errors_total")
+                errors.append(f"{name}: {exc}")
+                logger.error("Fehler beim Starten von Worker %s: %s", name, exc)
+
+    ADMIN_STATS.mark_worker_restart()
+    restarted = stopped + started
+    return {
+        "status": "ok" if not errors else "partial",
+        "reason": reason,
+        "stopped": stopped,
+        "started": started,
+        "restarted": restarted,
+        "desired_worker_count": len(desired_entries),
+        "skipped_interfaces": skipped,
+        "duration_ms": int((time.time() - started_at) * 1000),
+        "errors": errors,
+        "at": utc_now_iso(),
+    }
+
+
 @app.get("/debug/service-types")
 def api_service_types(_auth_ok: bool = Depends(require_ui_auth)):
     """
@@ -197,7 +340,7 @@ def api_debug_ws_assignments(_auth_ok: bool = Depends(require_ui_auth)):
     }
 
 @app.get("/health")
-def api_health(_auth_ok: bool = Depends(require_ui_auth)):
+def api_health():
     # Basis: Prozess lebt
     base_status = "ok"
     register_enabled = is_hub_registration_enabled(SAT_CONFIG)
@@ -237,6 +380,155 @@ def api_config_local(_auth_ok: bool = Depends(require_ui_auth)):
     cfg.pop("shared_secret", None)
     cfg.pop("ui_auth_password", None)
     return cfg
+
+
+@app.get("/admin/overview")
+def api_admin_overview(_auth_ok: bool = Depends(require_ui_auth)):
+    worker_state = _worker_snapshot()
+    assignments = SAT_CONFIG.get("ws_assignments")
+    last_error = _normalize_last_error(HUB_STATUS.get("last_error"))
+
+    with CACHE_LOCK:
+        discovered_services = len(SERVICE_CACHE)
+        service_types = len(DISCOVERED_SERVICE_TYPES)
+
+    return {
+        "time": utc_now_iso(),
+        "sat_id": SAT_CONFIG.get("sat_id"),
+        "mode": get_mode_key(SAT_CONFIG),
+        "mode_label": get_mode_label(SAT_CONFIG),
+        "mode_description": get_mode_description(SAT_CONFIG),
+        "interface_config_source": get_interface_config_source(SAT_CONFIG),
+        "publish_to_hub": is_publish_to_hub_enabled(SAT_CONFIG),
+        "hub_register_enabled": is_hub_registration_enabled(SAT_CONFIG),
+        "hub_ws_enabled": is_ws_enabled(SAT_CONFIG),
+        "hub_status": {
+            "last_ok": HUB_STATUS.get("last_ok"),
+            "last_error": last_error,
+        },
+        "workers": worker_state,
+        "discovered_services": discovered_services,
+        "discovered_service_types": service_types,
+        "ws_assignments_cached": len(assignments) if isinstance(assignments, list) else 0,
+        "assignments_updated_at": SAT_CONFIG.get("assignments_updated_at"),
+        "ws_assignments_received_at": SAT_CONFIG.get("ws_assignments_received_at"),
+    }
+
+
+@app.get("/admin/spoofing")
+def api_admin_spoofing(_auth_ok: bool = Depends(require_ui_auth)):
+    iface_rows: List[Dict[str, Any]] = []
+    total_active = 0
+    total_conflicts = 0
+
+    with WORKER_LOCK:
+        for iface, entry in mdns_workers.items():
+            worker_obj = entry.get("worker")
+            current_services = getattr(worker_obj, "current_services", {}) or {}
+            conflict_keys = sorted(list(getattr(worker_obj, "conflict_keys", set()) or set()))
+            services = []
+            for assignment in current_services.values():
+                svc = assignment.get("service") or {}
+                services.append(
+                    {
+                        "instance_name": svc.get("instance_name"),
+                        "service_name": svc.get("service_name"),
+                        "hostname": svc.get("hostname"),
+                        "addresses": list(svc.get("addresses") or []),
+                    }
+                )
+            iface_rows.append(
+                {
+                    "iface": iface,
+                    "mode": entry.get("mode"),
+                    "active_count": len(services),
+                    "conflict_count": len(conflict_keys),
+                    "conflict_keys": conflict_keys,
+                    "services": services,
+                }
+            )
+            total_active += len(services)
+            total_conflicts += len(conflict_keys)
+
+    iface_rows.sort(key=lambda item: item["iface"])
+    cached_assignments = SAT_CONFIG.get("ws_assignments")
+    return {
+        "time": utc_now_iso(),
+        "assignments_cached": len(cached_assignments) if isinstance(cached_assignments, list) else 0,
+        "assignments_updated_at": SAT_CONFIG.get("assignments_updated_at"),
+        "ws_assignments_received_at": SAT_CONFIG.get("ws_assignments_received_at"),
+        "active_total": total_active,
+        "conflict_total": total_conflicts,
+        "interfaces": iface_rows,
+    }
+
+
+@app.get("/admin/metrics")
+def api_admin_metrics(_auth_ok: bool = Depends(require_ui_auth)):
+    stats = ADMIN_STATS.snapshot()
+    worker_state = _worker_snapshot()
+
+    with CACHE_LOCK:
+        cache_size = len(SERVICE_CACHE)
+
+    return {
+        "time": utc_now_iso(),
+        "counters": stats,
+        "runtime": {
+            "worker_count": worker_state["count"],
+            "service_cache_count": cache_size,
+            "hub_last_ok": HUB_STATUS.get("last_ok"),
+            "hub_last_error": _normalize_last_error(HUB_STATUS.get("last_error")),
+        },
+    }
+
+
+@app.get("/admin/settings")
+def api_admin_settings(_auth_ok: bool = Depends(require_ui_auth)):
+    return build_admin_settings_payload(SAT_CONFIG)
+
+
+@app.put("/admin/settings")
+def api_admin_settings_update(
+    payload: Dict[str, Any] = Body(...),
+    _auth_ok: bool = Depends(require_ui_auth),
+):
+    settings_payload = payload.get("settings")
+    apply_now = bool(payload.get("apply_now", False))
+
+    try:
+        normalized = validate_admin_settings_payload(settings_payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    changed: Dict[str, Any] = {}
+    for key, value in normalized.items():
+        if SAT_CONFIG.get(key) != value:
+            changed[key] = value
+            SAT_CONFIG[key] = value
+
+    try:
+        persist_sat_config(SAT_CONFIG_PATH, SAT_CONFIG)
+    except Exception as exc:
+        ADMIN_STATS.increment("errors_total")
+        raise HTTPException(status_code=500, detail=f"Settings konnten nicht gespeichert werden: {exc}") from exc
+
+    restart_result = None
+    if apply_now:
+        restart_result = restart_workers_from_runtime_config(reason="settings_apply")
+
+    return {
+        "status": "ok",
+        "changed": changed,
+        "apply_now": apply_now,
+        "restart_result": restart_result,
+        "settings": build_admin_settings_payload(SAT_CONFIG),
+    }
+
+
+@app.post("/admin/actions/restart-workers")
+def api_admin_restart_workers(_auth_ok: bool = Depends(require_ui_auth)):
+    return restart_workers_from_runtime_config(reason="admin_action")
 
 
 @app.get("/services")
@@ -289,6 +581,14 @@ def ui_root(_auth_ok: bool = Depends(require_ui_auth)):
     if ui_path.exists():
         return FileResponse(str(ui_path))
     return HTMLResponse("<h1>UI file ui.html not found</h1>", status_code=404)
+
+
+@app.get("/ui/admin", response_class=HTMLResponse)
+def ui_admin(_auth_ok: bool = Depends(require_ui_auth)):
+    ui_path = BASE_DIR / "ui_admin.html"
+    if ui_path.exists():
+        return FileResponse(str(ui_path))
+    return HTMLResponse("<h1>UI file ui_admin.html not found</h1>", status_code=404)
 
 
 def start_api_server():
@@ -607,7 +907,7 @@ def cleanup_vlan_subinterfaces(interfaces_cfg: List[Dict[str, Any]]) -> None:
 # Konfig laden / HTTP zum Hub
 # ─────────────────────────────────────────────
 
-def load_config(path: Path = DEFAULT_CONFIG_PATH) -> Dict[str, Any]:
+def load_config(path: Path = SAT_CONFIG_PATH) -> Dict[str, Any]:
     if not path.exists():
         logger.error(f"Konfigurationsdatei nicht gefunden: {path}")
         sys.exit(1)
@@ -797,6 +1097,7 @@ def register_sat(cfg: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         resp = requests.post(url, json=payload, headers=sat_headers(cfg), timeout=10)
     except Exception as e:
         logger.error(f"Fehler bei der Registrierung: {e}")
+        ADMIN_STATS.increment("errors_total")
         HUB_STATUS["last_error"] = {
             "time": datetime.now(timezone.utc).isoformat(),
             "msg": f"register_sat exception: {e}",
@@ -805,6 +1106,7 @@ def register_sat(cfg: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
     if resp.status_code != 200:
         logger.error(f"Registrierung fehlgeschlagen: HTTP {resp.status_code} - {resp.text}")
+        ADMIN_STATS.increment("errors_total")
         HUB_STATUS["last_error"] = {
             "time": datetime.now(timezone.utc).isoformat(),
             "msg": f"register_sat HTTP {resp.status_code}",
@@ -834,6 +1136,7 @@ def fetch_sat_config(cfg: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         resp = requests.get(url, headers=sat_headers(cfg), timeout=10)
     except Exception as e:
         logger.error(f"Fehler beim Abruf der Config: {e}")
+        ADMIN_STATS.increment("errors_total")
         HUB_STATUS["last_error"] = {
             "time": datetime.now(timezone.utc).isoformat(),
             "msg": f"fetch_sat_config exception: {e}",
@@ -842,6 +1145,7 @@ def fetch_sat_config(cfg: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
     if resp.status_code != 200:
         logger.error(f"Config-Abruf fehlgeschlagen: HTTP {resp.status_code} - {resp.text}")
+        ADMIN_STATS.increment("errors_total")
         HUB_STATUS["last_error"] = {
             "time": datetime.now(timezone.utc).isoformat(),
             "msg": f"fetch_sat_config HTTP {resp.status_code}",
@@ -882,6 +1186,8 @@ def push_services_to_hub(cfg: Dict[str, Any]):
         )
     except Exception as e:
         logger.error(f"Fehler beim Service-Ingest zum Hub: {e}")
+        ADMIN_STATS.increment("hub_push_error_total")
+        ADMIN_STATS.increment("errors_total")
         HUB_STATUS["last_error"] = {
             "time": datetime.now(timezone.utc).isoformat(),
             "msg": f"push_services_to_hub exception: {e}",
@@ -892,6 +1198,8 @@ def push_services_to_hub(cfg: Dict[str, Any]):
         logger.error(
             f"Service-Ingest fehlgeschlagen: HTTP {resp.status_code} - {resp.text}"
         )
+        ADMIN_STATS.increment("hub_push_error_total")
+        ADMIN_STATS.increment("errors_total")
         HUB_STATUS["last_error"] = {
             "time": datetime.now(timezone.utc).isoformat(),
             "msg": f"push_services_to_hub HTTP {resp.status_code}",
@@ -905,6 +1213,7 @@ def push_services_to_hub(cfg: Dict[str, Any]):
 
     HUB_STATUS["last_ok"] = datetime.now(timezone.utc).isoformat()
     HUB_STATUS["last_error"] = None
+    ADMIN_STATS.increment("hub_push_ok_total")
 
     ingested = data.get("ingested")
     total = data.get("total")
@@ -1036,6 +1345,10 @@ def main():
 
     try:
         while not SHUTDOWN_REQUESTED:
+            poll_interval = int(cfg.get("config_poll_interval", 300))
+            register_enabled = is_hub_registration_enabled(cfg)
+            publish_enabled = is_publish_to_hub_enabled(cfg)
+
             if register_enabled:
                 reg_result = register_sat(cfg)
                 if reg_result is None:
@@ -1191,7 +1504,8 @@ def main():
                         )
 
             try:
-                push_services_to_hub(cfg)
+                if publish_enabled:
+                    push_services_to_hub(cfg)
             except Exception as e:
                 logger.error(f"Unerwarteter Fehler beim Service-Ingest: {e}")
 

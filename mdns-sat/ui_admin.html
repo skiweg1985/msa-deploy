@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MSA SAT – Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen">
+
+<!-- ===== Shared Topbar (matches ui.html) ===== -->
+<header class="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+            <div class="flex items-center justify-center h-9 w-9 rounded-lg bg-blue-600 text-white font-bold">
+                M
+            </div>
+            <div class="min-w-0">
+                <div class="text-sm sm:text-base font-semibold text-slate-900 truncate">
+                    MSA &middot; mDNS Service Atlas
+                </div>
+                <div class="text-[0.7rem] sm:text-xs text-slate-500 truncate">
+                    SAT &middot; Admin
+                </div>
+            </div>
+        </div>
+        <nav class="flex items-center gap-1 sm:gap-2">
+            <a href="/ui"
+               class="inline-flex items-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 text-xs sm:text-sm px-3 py-1.5 font-medium">
+                Services
+            </a>
+            <a href="/ui/admin"
+               class="inline-flex items-center rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs sm:text-sm px-3 py-1.5 font-medium">
+                SAT Admin
+            </a>
+        </nav>
+    </div>
+</header>
+
+<!-- ===== Global toast / status banner ===== -->
+<div id="toastContainer" class="fixed top-16 right-4 z-40 space-y-2 w-full max-w-sm pointer-events-none"></div>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+    <!-- Page header + actions -->
+    <section class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+            <h1 class="text-lg sm:text-xl font-semibold text-slate-900">Administration</h1>
+            <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+                Overview, Spoofing, Metrics, Settings und Actions dieses SAT.
+            </p>
+        </div>
+        <div class="flex items-center gap-2">
+            <span id="lastUpdated" class="text-[0.7rem] sm:text-xs text-slate-500">Zuletzt aktualisiert: –</span>
+            <button id="btnReloadAll"
+                    class="inline-flex items-center gap-1 rounded-lg bg-blue-600 text-white text-xs sm:text-sm px-3 py-1.5 font-medium shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-white">
+                Reload All
+            </button>
+        </div>
+    </section>
+
+    <!-- ===== Overview (KPI cards) ===== -->
+    <section aria-labelledby="overviewHeading" class="space-y-3">
+        <div class="flex items-end justify-between">
+            <h2 id="overviewHeading" class="text-sm font-semibold text-slate-700 uppercase tracking-wide">Overview</h2>
+            <span id="overviewUpdated" class="text-[0.7rem] text-slate-400">–</span>
+        </div>
+        <div id="overviewGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <!-- KPI cards gefüllt via JS -->
+        </div>
+    </section>
+
+    <!-- ===== Spoofing ===== -->
+    <section aria-labelledby="spoofingHeading" class="space-y-3">
+        <div class="flex items-end justify-between">
+            <h2 id="spoofingHeading" class="text-sm font-semibold text-slate-700 uppercase tracking-wide">Spoofing</h2>
+            <span id="spoofingSummary" class="text-[0.7rem] text-slate-500">–</span>
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-left text-xs sm:text-sm">
+                    <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                        <th class="px-3 py-2.5 font-semibold text-slate-500 whitespace-nowrap">Interface</th>
+                        <th class="px-3 py-2.5 font-semibold text-slate-500 whitespace-nowrap">Mode</th>
+                        <th class="px-3 py-2.5 font-semibold text-slate-500 text-right whitespace-nowrap">Active</th>
+                        <th class="px-3 py-2.5 font-semibold text-slate-500 text-right whitespace-nowrap">Konflikte</th>
+                        <th class="px-3 py-2.5 font-semibold text-slate-500 text-right whitespace-nowrap">Details</th>
+                    </tr>
+                    </thead>
+                    <tbody id="spoofingTbody" class="divide-y divide-slate-100 bg-white">
+                    <tr><td colspan="5" class="px-3 py-3 text-slate-400 text-xs">lädt…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Metrics ===== -->
+    <section aria-labelledby="metricsHeading" class="space-y-3">
+        <h2 id="metricsHeading" class="text-sm font-semibold text-slate-700 uppercase tracking-wide">Metrics</h2>
+        <div id="metricsGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            <!-- Counter-Karten gefüllt via JS -->
+        </div>
+    </section>
+
+    <!-- ===== Settings ===== -->
+    <section aria-labelledby="settingsHeading" class="space-y-3">
+        <div class="flex items-end justify-between">
+            <h2 id="settingsHeading" class="text-sm font-semibold text-slate-700 uppercase tracking-wide">Settings</h2>
+            <button id="btnReloadSettings"
+                    class="text-xs text-slate-500 hover:text-slate-700 underline-offset-2 hover:underline">
+                Neu laden
+            </button>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 space-y-5">
+            <!-- Read-only section -->
+            <div>
+                <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Identität (read-only)</h3>
+                <dl id="settingsReadonlyList" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
+                    <!-- key/value rows -->
+                </dl>
+            </div>
+
+            <!-- Editable form (whitelist-based) -->
+            <div>
+                <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Editierbare Einstellungen</h3>
+                <form id="settingsForm" class="space-y-4">
+                    <div id="settingsFormFields" class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                        <!-- Form fields -->
+                    </div>
+
+                    <div id="settingsFieldError" class="hidden text-xs text-red-600"></div>
+
+                    <!-- Advanced JSON (collapsible) -->
+                    <details class="group rounded-lg border border-slate-200 bg-slate-50 p-3">
+                        <summary class="cursor-pointer select-none text-xs font-medium text-slate-600 hover:text-slate-900">
+                            Advanced: JSON-Editor (optional)
+                        </summary>
+                        <div class="mt-3 space-y-2">
+                            <p class="text-[0.7rem] text-slate-500">
+                                Nur wenn nötig. Formularwerte werden beim Abschicken bevorzugt;
+                                wenn JSON aktiv und valid ist, überschreibt es die Form-Werte.
+                            </p>
+                            <label class="flex items-center gap-2 text-xs text-slate-700">
+                                <input type="checkbox" id="advancedUseJson"
+                                       class="rounded border-slate-400 text-blue-600 focus:ring-blue-500">
+                                JSON als Quelle verwenden
+                            </label>
+                            <textarea id="settingsJson" rows="10"
+                                      class="w-full font-mono text-xs rounded-lg border border-slate-300 bg-white p-2 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"></textarea>
+                        </div>
+                    </details>
+
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2 border-t border-slate-100">
+                        <label class="inline-flex items-center gap-2 text-xs sm:text-sm text-slate-700">
+                            <input type="checkbox" id="applyNow"
+                                   class="rounded border-slate-400 text-blue-600 focus:ring-blue-500">
+                            Apply now (Worker neu starten)
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="btnSaveSettings"
+                                    class="inline-flex items-center gap-1 rounded-lg bg-blue-600 text-white text-xs sm:text-sm px-3 py-1.5 font-medium shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-white disabled:opacity-50">
+                                Speichern
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Actions ===== -->
+    <section aria-labelledby="actionsHeading" class="space-y-3">
+        <h2 id="actionsHeading" class="text-sm font-semibold text-slate-700 uppercase tracking-wide">Actions</h2>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-900">mDNS Worker neu starten</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">
+                        Beendet alle laufenden Worker und startet sie basierend auf der aktuellen Laufzeit-Konfiguration neu.
+                    </p>
+                </div>
+                <button id="btnRestartWorkers"
+                        class="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 text-xs sm:text-sm px-3 py-1.5 font-medium shadow-sm hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-white disabled:opacity-50">
+                    <span id="btnRestartWorkersLabel">Worker neu starten</span>
+                </button>
+            </div>
+            <div id="restartResultPanel"
+                 class="hidden rounded-lg border px-3 py-2 text-xs sm:text-sm"></div>
+        </div>
+    </section>
+</main>
+
+<!-- ===== Restart Confirm Modal ===== -->
+<div id="restartConfirmOverlay" class="fixed inset-0 z-50 hidden bg-black/40 backdrop-blur-sm">
+    <div class="flex min-h-screen items-center justify-center p-3 sm:p-4">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200">
+            <div class="px-5 py-4 border-b border-slate-200">
+                <h3 class="text-base font-semibold text-slate-900">mDNS Worker neu starten?</h3>
+            </div>
+            <div class="px-5 py-4 text-sm text-slate-700">
+                Dadurch werden alle laufenden mDNS Worker kurzzeitig unterbrochen.
+                Fortfahren?
+            </div>
+            <div class="px-5 py-3 border-t border-slate-200 flex justify-end gap-2">
+                <button id="btnRestartCancel"
+                        class="rounded-lg border border-slate-300 bg-white text-slate-700 text-xs sm:text-sm px-3 py-1.5 hover:bg-slate-50">
+                    Abbrechen
+                </button>
+                <button id="btnRestartConfirm"
+                        class="rounded-lg bg-amber-600 text-white text-xs sm:text-sm px-3 py-1.5 font-medium hover:bg-amber-700">
+                    Neu starten
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    "use strict";
+
+    const $ = (id) => document.getElementById(id);
+
+    // ---------- State ----------
+    let SETTINGS_SCHEMA = null;
+    let CURRENT_EDITABLE = {};
+    let CURRENT_READONLY = {};
+
+    // ---------- Helpers ----------
+    function fmtTime(value) {
+        if (!value) return "–";
+        try {
+            let s = value;
+            if (typeof s === "string") {
+                if (s.includes(".")) s = s.split(".")[0];
+                if (!s.endsWith("Z")) s = s + "Z";
+            }
+            const d = new Date(s);
+            if (isNaN(d.getTime())) return String(value);
+            return d.toLocaleString("de-DE", {
+                year: "numeric", month: "2-digit", day: "2-digit",
+                hour: "2-digit", minute: "2-digit", second: "2-digit",
+            });
+        } catch (e) {
+            return String(value);
+        }
+    }
+
+    function toast(message, kind = "info", opts = {}) {
+        const container = $("toastContainer");
+        const el = document.createElement("div");
+        const color = kind === "error"
+            ? "border-red-300 bg-red-50 text-red-800"
+            : kind === "success"
+                ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                : "border-slate-300 bg-white text-slate-800";
+        el.className = `pointer-events-auto rounded-lg border shadow-sm px-3 py-2 text-xs sm:text-sm ${color}`;
+        el.textContent = message;
+        container.appendChild(el);
+        setTimeout(() => {
+            el.style.transition = "opacity 0.4s";
+            el.style.opacity = "0";
+            setTimeout(() => el.remove(), 450);
+        }, opts.duration || 4000);
+    }
+
+    async function fetchJSON(url, opts = {}) {
+        const res = await fetch(url, opts);
+        let body = null;
+        try { body = await res.json(); } catch (e) { /* non-json */ }
+        if (!res.ok) {
+            const msg = (body && (body.detail || body.message))
+                ? (body.detail || body.message)
+                : `${url}: HTTP ${res.status}`;
+            const err = new Error(msg);
+            err.status = res.status;
+            err.body = body;
+            throw err;
+        }
+        return body;
+    }
+
+    // ---------- Overview rendering ----------
+    function statusBadge(text, kind) {
+        const map = {
+            ok: "bg-emerald-100 text-emerald-700 border-emerald-200",
+            warn: "bg-amber-100 text-amber-800 border-amber-200",
+            err: "bg-red-100 text-red-700 border-red-200",
+            off: "bg-slate-100 text-slate-600 border-slate-200",
+            info: "bg-blue-50 text-blue-700 border-blue-200",
+        };
+        const cls = map[kind] || map.info;
+        return `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[0.65rem] font-medium ${cls}">${text}</span>`;
+    }
+
+    function kpiCard({label, value, sub, badge}) {
+        return `
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+                <div class="flex items-start justify-between gap-2">
+                    <div class="text-[0.7rem] uppercase tracking-wide text-slate-500 font-semibold">
+                        ${label}
+                    </div>
+                    ${badge || ""}
+                </div>
+                <div class="mt-2 text-lg sm:text-xl font-semibold text-slate-900 break-words">
+                    ${value === null || value === undefined || value === "" ? "–" : value}
+                </div>
+                ${sub ? `<div class="mt-1 text-[0.7rem] text-slate-500">${sub}</div>` : ""}
+            </div>
+        `;
+    }
+
+    function renderOverview(d) {
+        const grid = $("overviewGrid");
+        const upd = $("overviewUpdated");
+        upd.textContent = d && d.time ? `Stand: ${fmtTime(d.time)}` : "";
+
+        const workers = d.workers || {};
+        const hub = d.hub_status || {};
+        const hubLastOk = hub.last_ok;
+        const hubLastErr = hub.last_error;
+        const registerEnabled = d.hub_register_enabled === true;
+        const publishEnabled = d.publish_to_hub === true;
+
+        // Hub-Status Badge
+        let hubBadge;
+        if (!registerEnabled) {
+            hubBadge = statusBadge("deaktiviert", "off");
+        } else if (hubLastOk && (!hubLastErr || new Date(hubLastOk) >= new Date(hubLastErr.time || 0))) {
+            hubBadge = statusBadge("ok", "ok");
+        } else if (hubLastErr) {
+            hubBadge = statusBadge("gestört", "err");
+        } else {
+            hubBadge = statusBadge("unbekannt", "warn");
+        }
+
+        const cards = [];
+        cards.push(kpiCard({
+            label: "SAT ID",
+            value: d.sat_id || "–",
+            sub: `Mode: ${d.mode_label || d.mode || "–"}`,
+        }));
+        cards.push(kpiCard({
+            label: "Interface-Quelle",
+            value: d.interface_config_source || "none",
+            sub: `WS-Assignments gecached: ${d.ws_assignments_cached ?? 0}`,
+        }));
+        cards.push(kpiCard({
+            label: "Worker",
+            value: workers.count ?? 0,
+            sub: `Services im Cache: ${d.discovered_services ?? 0}`,
+        }));
+        cards.push(kpiCard({
+            label: "Hub",
+            value: registerEnabled ? "aktiv" : "deaktiviert",
+            sub: publishEnabled ? "publish: aktiv" : "publish: aus",
+            badge: hubBadge,
+        }));
+        cards.push(kpiCard({
+            label: "Hub last ok",
+            value: fmtTime(hubLastOk),
+        }));
+        cards.push(kpiCard({
+            label: "Hub last error",
+            value: hubLastErr && hubLastErr.msg ? hubLastErr.msg : "–",
+            sub: hubLastErr && hubLastErr.time ? fmtTime(hubLastErr.time) : "",
+            badge: hubLastErr ? statusBadge("error", "err") : "",
+        }));
+        cards.push(kpiCard({
+            label: "Assignments aktualisiert",
+            value: fmtTime(d.assignments_updated_at),
+            sub: d.ws_assignments_received_at ? `received: ${fmtTime(d.ws_assignments_received_at)}` : "",
+        }));
+        cards.push(kpiCard({
+            label: "WS Hub Channel",
+            value: d.hub_ws_enabled ? "aktiv" : "deaktiviert",
+            badge: d.hub_ws_enabled ? statusBadge("ws", "ok") : statusBadge("off", "off"),
+        }));
+
+        grid.innerHTML = cards.join("");
+    }
+
+    // ---------- Spoofing ----------
+    function renderSpoofing(d) {
+        const tbody = $("spoofingTbody");
+        const summary = $("spoofingSummary");
+        const interfaces = d.interfaces || [];
+        summary.textContent = `${interfaces.length} Interface${interfaces.length === 1 ? "" : "s"} · ${d.active_total ?? 0} aktiv · ${d.conflict_total ?? 0} Konflikte`;
+
+        if (!interfaces.length) {
+            tbody.innerHTML = `<tr><td colspan="5" class="px-3 py-3 text-slate-500 text-xs">Keine Interfaces aktiv.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = "";
+        interfaces.forEach((iface, idx) => {
+            const mainRow = document.createElement("tr");
+            mainRow.className = "hover:bg-slate-50";
+            const conflictBadge = iface.conflict_count
+                ? statusBadge(`${iface.conflict_count} Konflikt${iface.conflict_count === 1 ? "" : "e"}`, "warn")
+                : statusBadge("keine Konflikte", "ok");
+            mainRow.innerHTML = `
+                <td class="px-3 py-2 align-top font-mono text-xs">${iface.iface || "–"}</td>
+                <td class="px-3 py-2 align-top text-xs">${iface.mode || "–"}</td>
+                <td class="px-3 py-2 align-top text-right font-semibold text-xs">${iface.active_count ?? 0}</td>
+                <td class="px-3 py-2 align-top text-right text-xs">${conflictBadge}</td>
+                <td class="px-3 py-2 align-top text-right">
+                    <button type="button"
+                            data-idx="${idx}"
+                            class="spoof-toggle inline-flex items-center rounded-lg border border-slate-300 px-2 py-1 text-[0.7rem] font-medium text-slate-700 bg-white hover:bg-slate-50">
+                        anzeigen
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(mainRow);
+
+            const detailRow = document.createElement("tr");
+            detailRow.className = "hidden bg-slate-50/60";
+            detailRow.dataset.detailIdx = String(idx);
+            const services = iface.services || [];
+            const conflicts = iface.conflict_keys || [];
+            const svcHtml = services.length
+                ? `<ul class="text-[0.7rem] font-mono text-slate-700 space-y-0.5 max-h-48 overflow-auto">
+                    ${services.map(s => `<li>${(s.instance_name || "?")} <span class="text-slate-400">/</span> ${s.service_name || "?"} <span class="text-slate-400">@</span> ${s.hostname || "?"}</li>`).join("")}
+                   </ul>`
+                : `<span class="text-xs text-slate-500">Keine aktiven Services auf diesem Interface.</span>`;
+            const conflictHtml = conflicts.length
+                ? `<ul class="text-[0.7rem] font-mono text-amber-800 space-y-0.5 max-h-48 overflow-auto">
+                    ${conflicts.map(k => `<li>${k}</li>`).join("")}
+                   </ul>`
+                : `<span class="text-xs text-slate-500">–</span>`;
+            detailRow.innerHTML = `
+                <td colspan="5" class="px-5 py-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <div class="text-[0.65rem] uppercase tracking-wide text-slate-500 font-semibold mb-1">Aktive Services</div>
+                            ${svcHtml}
+                        </div>
+                        <div>
+                            <div class="text-[0.65rem] uppercase tracking-wide text-slate-500 font-semibold mb-1">Konflikt-Keys</div>
+                            ${conflictHtml}
+                        </div>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(detailRow);
+        });
+
+        tbody.querySelectorAll(".spoof-toggle").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const idx = btn.getAttribute("data-idx");
+                const detail = tbody.querySelector(`tr[data-detail-idx="${idx}"]`);
+                if (!detail) return;
+                if (detail.classList.contains("hidden")) {
+                    detail.classList.remove("hidden");
+                    btn.textContent = "ausblenden";
+                } else {
+                    detail.classList.add("hidden");
+                    btn.textContent = "anzeigen";
+                }
+            });
+        });
+    }
+
+    // ---------- Metrics ----------
+    function renderMetrics(d) {
+        const grid = $("metricsGrid");
+        const counters = d.counters || {};
+        const runtime = d.runtime || {};
+
+        const order = [
+            ["queries_sent_total", "Queries sent"],
+            ["queries_received_total", "Queries received"],
+            ["responses_sent_total", "Responses sent"],
+            ["spoof_announces_total", "Spoof announces"],
+            ["spoof_goodbyes_total", "Spoof goodbyes"],
+            ["hub_push_ok_total", "Hub push ok"],
+            ["hub_push_error_total", "Hub push errors"],
+            ["worker_restart_total", "Worker restarts"],
+            ["errors_total", "Errors total"],
+        ];
+
+        const parts = [];
+        order.forEach(([k, label]) => {
+            parts.push(kpiCard({label, value: counters[k] ?? 0}));
+        });
+        parts.push(kpiCard({
+            label: "Worker Count",
+            value: runtime.worker_count ?? 0,
+            sub: `Cache: ${runtime.service_cache_count ?? 0}`,
+        }));
+        parts.push(kpiCard({
+            label: "Last Worker Restart",
+            value: fmtTime(counters.last_worker_restart_at),
+        }));
+        parts.push(kpiCard({
+            label: "Gestartet",
+            value: fmtTime(counters.started_at),
+        }));
+
+        grid.innerHTML = parts.join("");
+    }
+
+    // ---------- Settings form ----------
+    function humanLabel(key) {
+        const map = {
+            publish_to_hub: "An Hub publishen",
+            hub_register_enabled: "Hub-Registrierung aktiv",
+            hub_ws_enabled: "Hub WebSocket Channel",
+            config_poll_interval: "Config Poll Interval (s)",
+            mdns_query_interval: "mDNS Query Interval (s)",
+            mdns_resolve_interval: "mDNS Resolve Interval (s)",
+            mdns_resolve_unicast: "mDNS Unicast Resolve",
+            excluded_services: "Ausgeschlossene Services",
+            manage_vlan_interfaces: "VLAN-Interfaces managen",
+        };
+        return map[key] || key;
+    }
+
+    function fieldId(key) { return `f_${key}`; }
+
+    function renderSettingsForm(payload) {
+        SETTINGS_SCHEMA = payload.schema || {};
+        CURRENT_EDITABLE = payload.editable || {};
+        CURRENT_READONLY = payload.readonly || {};
+
+        // read-only
+        const ro = $("settingsReadonlyList");
+        const roEntries = Object.entries(CURRENT_READONLY);
+        if (!roEntries.length) {
+            ro.innerHTML = `<div class="text-xs text-slate-500">Keine read-only Felder.</div>`;
+        } else {
+            ro.innerHTML = roEntries.map(([k, v]) => `
+                <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                    <div class="text-[0.65rem] uppercase tracking-wide text-slate-500 font-semibold">${k}</div>
+                    <div class="font-mono text-xs text-slate-800 break-all">${v === null || v === undefined ? "–" : v}</div>
+                </div>
+            `).join("");
+        }
+
+        // editable
+        const form = $("settingsFormFields");
+        const parts = [];
+        Object.keys(SETTINGS_SCHEMA).forEach(key => {
+            const meta = SETTINGS_SCHEMA[key];
+            const label = humanLabel(key);
+            const value = CURRENT_EDITABLE[key];
+            const id = fieldId(key);
+            if (meta.type === "bool") {
+                parts.push(`
+                    <label class="flex items-start gap-2 rounded-lg border border-slate-200 bg-white p-3 hover:bg-slate-50 cursor-pointer sm:col-span-1">
+                        <input type="checkbox" id="${id}" data-key="${key}" data-type="bool"
+                               ${value === true ? "checked" : ""}
+                               class="mt-0.5 rounded border-slate-400 text-blue-600 focus:ring-blue-500">
+                        <div>
+                            <div class="text-xs font-medium text-slate-800">${label}</div>
+                            <div class="text-[0.65rem] text-slate-500 font-mono">${key}</div>
+                        </div>
+                    </label>
+                `);
+            } else if (meta.type === "int") {
+                parts.push(`
+                    <div class="flex flex-col gap-1">
+                        <label for="${id}" class="text-xs font-medium text-slate-700">${label}</label>
+                        <input type="number" id="${id}" data-key="${key}" data-type="int"
+                               value="${value ?? ""}"
+                               min="${meta.min ?? 0}"
+                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                        <span class="text-[0.65rem] text-slate-500 font-mono">${key}</span>
+                    </div>
+                `);
+            } else if (meta.type === "list[str]") {
+                const joined = Array.isArray(value) ? value.join("\n") : "";
+                parts.push(`
+                    <div class="flex flex-col gap-1 sm:col-span-2">
+                        <label for="${id}" class="text-xs font-medium text-slate-700">${label}</label>
+                        <textarea id="${id}" data-key="${key}" data-type="list[str]" rows="4"
+                                  placeholder="Ein Eintrag pro Zeile, z. B. _airplay._tcp.local"
+                                  class="w-full font-mono rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400">${joined}</textarea>
+                        <span class="text-[0.65rem] text-slate-500 font-mono">${key} (ein Eintrag pro Zeile)</span>
+                    </div>
+                `);
+            } else {
+                // fallback text
+                parts.push(`
+                    <div class="flex flex-col gap-1 sm:col-span-2">
+                        <label for="${id}" class="text-xs font-medium text-slate-700">${label}</label>
+                        <input type="text" id="${id}" data-key="${key}" data-type="text"
+                               value="${value ?? ""}"
+                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs shadow-sm">
+                        <span class="text-[0.65rem] text-slate-500 font-mono">${key} (unbekannter Typ: ${meta.type})</span>
+                    </div>
+                `);
+            }
+        });
+        form.innerHTML = parts.join("");
+
+        // advanced JSON
+        $("settingsJson").value = JSON.stringify(CURRENT_EDITABLE, null, 2);
+        $("advancedUseJson").checked = false;
+    }
+
+    function collectSettingsFromForm() {
+        // returns {payload, error}
+        const useJson = $("advancedUseJson").checked;
+        if (useJson) {
+            try {
+                const parsed = JSON.parse($("settingsJson").value || "{}");
+                if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+                    return {error: "JSON muss ein Objekt sein."};
+                }
+                return {payload: parsed};
+            } catch (e) {
+                return {error: `JSON ungültig: ${e.message}`};
+            }
+        }
+
+        const payload = {};
+        const schema = SETTINGS_SCHEMA || {};
+        for (const key of Object.keys(schema)) {
+            const meta = schema[key];
+            const el = $(fieldId(key));
+            if (!el) continue;
+            if (meta.type === "bool") {
+                payload[key] = !!el.checked;
+            } else if (meta.type === "int") {
+                const raw = el.value.trim();
+                if (raw === "") {
+                    return {error: `Feld '${humanLabel(key)}' darf nicht leer sein.`};
+                }
+                const n = Number(raw);
+                if (!Number.isInteger(n)) {
+                    return {error: `Feld '${humanLabel(key)}' muss eine ganze Zahl sein.`};
+                }
+                if (meta.min !== undefined && n < meta.min) {
+                    return {error: `Feld '${humanLabel(key)}' muss >= ${meta.min} sein.`};
+                }
+                payload[key] = n;
+            } else if (meta.type === "list[str]") {
+                const lines = (el.value || "")
+                    .split(/\r?\n/)
+                    .map(s => s.trim())
+                    .filter(Boolean);
+                payload[key] = lines;
+            } else {
+                payload[key] = el.value;
+            }
+        }
+        return {payload};
+    }
+
+    async function saveSettings() {
+        const errEl = $("settingsFieldError");
+        errEl.classList.add("hidden");
+        errEl.textContent = "";
+
+        const {payload, error} = collectSettingsFromForm();
+        if (error) {
+            errEl.textContent = error;
+            errEl.classList.remove("hidden");
+            toast(error, "error");
+            return;
+        }
+
+        const applyNow = $("applyNow").checked;
+        const btn = $("btnSaveSettings");
+        btn.disabled = true;
+        const originalLabel = btn.textContent;
+        btn.textContent = "Speichere…";
+        try {
+            const d = await fetchJSON("/admin/settings", {
+                method: "PUT",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({settings: payload, apply_now: applyNow}),
+            });
+            renderSettingsForm(d.settings || {editable: payload, readonly: CURRENT_READONLY, schema: SETTINGS_SCHEMA});
+            const changedKeys = Object.keys(d.changed || {});
+            const msg = changedKeys.length
+                ? `Settings gespeichert (${changedKeys.length} geändert).`
+                : "Settings gespeichert (keine Änderungen).";
+            toast(msg, "success");
+            if (applyNow && d.restart_result) {
+                renderRestartResult(d.restart_result);
+            }
+            await loadOverview();
+            await loadMetrics();
+            await loadSpoofing();
+        } catch (e) {
+            errEl.textContent = e.message || "Speichern fehlgeschlagen.";
+            errEl.classList.remove("hidden");
+            toast(`Speichern fehlgeschlagen: ${e.message}`, "error");
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalLabel;
+        }
+    }
+
+    // ---------- Restart action ----------
+    function renderRestartResult(result) {
+        const panel = $("restartResultPanel");
+        panel.classList.remove("hidden");
+        const status = (result && result.status) || "unknown";
+        const ok = status === "ok";
+        panel.className = `rounded-lg border px-3 py-2 text-xs sm:text-sm ${ok
+            ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+            : "border-red-300 bg-red-50 text-red-800"}`;
+        const parts = [];
+        parts.push(`<strong>Status:</strong> ${status}`);
+        if (result.reason) parts.push(`reason: ${result.reason}`);
+        if (result.started_workers !== undefined) parts.push(`started: ${result.started_workers}`);
+        if (result.stopped_workers !== undefined) parts.push(`stopped: ${result.stopped_workers}`);
+        if (result.duration_ms !== undefined) parts.push(`duration: ${result.duration_ms} ms`);
+        if (result.time) parts.push(`at ${fmtTime(result.time)}`);
+        panel.innerHTML = parts.join(" · ");
+    }
+
+    function openRestartConfirm() {
+        $("restartConfirmOverlay").classList.remove("hidden");
+    }
+    function closeRestartConfirm() {
+        $("restartConfirmOverlay").classList.add("hidden");
+    }
+
+    async function doRestartWorkers() {
+        closeRestartConfirm();
+        const btn = $("btnRestartWorkers");
+        const label = $("btnRestartWorkersLabel");
+        btn.disabled = true;
+        label.textContent = "Neustart läuft…";
+        try {
+            const d = await fetchJSON("/admin/actions/restart-workers", {method: "POST"});
+            renderRestartResult(d);
+            toast(`Worker neu gestartet (${d.started_workers ?? 0} started, ${d.stopped_workers ?? 0} stopped).`, "success");
+            await loadOverview();
+            await loadMetrics();
+            await loadSpoofing();
+        } catch (e) {
+            renderRestartResult({status: "error", reason: e.message});
+            toast(`Restart fehlgeschlagen: ${e.message}`, "error");
+        } finally {
+            btn.disabled = false;
+            label.textContent = "Worker neu starten";
+        }
+    }
+
+    // ---------- Loaders ----------
+    async function loadOverview() {
+        try {
+            const d = await fetchJSON("/admin/overview");
+            renderOverview(d);
+        } catch (e) {
+            $("overviewGrid").innerHTML = `<div class="col-span-full rounded-lg border border-red-300 bg-red-50 text-red-700 px-3 py-2 text-xs">Overview konnte nicht geladen werden: ${e.message}</div>`;
+        }
+    }
+    async function loadSpoofing() {
+        try {
+            const d = await fetchJSON("/admin/spoofing");
+            renderSpoofing(d);
+        } catch (e) {
+            $("spoofingTbody").innerHTML = `<tr><td colspan="5" class="px-3 py-3 text-red-700 text-xs">Spoofing konnte nicht geladen werden: ${e.message}</td></tr>`;
+        }
+    }
+    async function loadMetrics() {
+        try {
+            const d = await fetchJSON("/admin/metrics");
+            renderMetrics(d);
+        } catch (e) {
+            $("metricsGrid").innerHTML = `<div class="col-span-full rounded-lg border border-red-300 bg-red-50 text-red-700 px-3 py-2 text-xs">Metrics konnten nicht geladen werden: ${e.message}</div>`;
+        }
+    }
+    async function loadSettings() {
+        try {
+            const d = await fetchJSON("/admin/settings");
+            renderSettingsForm(d);
+        } catch (e) {
+            $("settingsFormFields").innerHTML = `<div class="sm:col-span-2 rounded-lg border border-red-300 bg-red-50 text-red-700 px-3 py-2 text-xs">Settings konnten nicht geladen werden: ${e.message}</div>`;
+        }
+    }
+
+    async function reloadAll() {
+        $("btnReloadAll").disabled = true;
+        try {
+            await Promise.all([loadOverview(), loadSpoofing(), loadMetrics(), loadSettings()]);
+            $("lastUpdated").textContent = `Zuletzt aktualisiert: ${new Date().toLocaleTimeString("de-DE")}`;
+        } catch (e) {
+            toast(`Reload fehlgeschlagen: ${e.message}`, "error");
+        } finally {
+            $("btnReloadAll").disabled = false;
+        }
+    }
+
+    // ---------- Wire up ----------
+    $("btnReloadAll").addEventListener("click", reloadAll);
+    $("btnReloadSettings").addEventListener("click", loadSettings);
+    $("btnSaveSettings").addEventListener("click", saveSettings);
+    $("btnRestartWorkers").addEventListener("click", openRestartConfirm);
+    $("btnRestartCancel").addEventListener("click", closeRestartConfirm);
+    $("btnRestartConfirm").addEventListener("click", doRestartWorkers);
+
+    document.addEventListener("keydown", (ev) => {
+        if (ev.key === "Escape") closeRestartConfirm();
+    });
+
+    reloadAll();
+})();
+</script>
+</body>
+</html>

@@ -4,6 +4,8 @@ import socket
 import logging
 from typing import Tuple
 
+from sat_admin import ADMIN_STATS
+
 logger = logging.getLogger("mdns-sat.outbound")
 
 # Globales Unicast-Socket (wird Lazy erstellt)
@@ -60,6 +62,7 @@ def send_mdns_response(worker, pkt: bytes, dest: Tuple[str, int], unicast: bool)
     if not unicast:
         try:
             worker.sock.sendto(pkt, dest)
+            ADMIN_STATS.increment("responses_sent_total")
             logger.debug(
                 "[MCAST-REPLY] iface=%s → %s:%d (len=%d)",
                 worker.iface,
@@ -100,6 +103,7 @@ def send_mdns_response(worker, pkt: bytes, dest: Tuple[str, int], unicast: bool)
                 len(pkt),
             )
             s.sendto(pkt, dest)
+            ADMIN_STATS.increment("responses_sent_total")
         except Exception as e:
             logger.error(
                 "[UNICAST-REPLY] Fehler beim Senden über globales Unicast-Socket "
@@ -120,5 +124,6 @@ def send_mdns_response(worker, pkt: bytes, dest: Tuple[str, int], unicast: bool)
                 len(pkt),
             )
             worker.sock.sendto(pkt, dest)
+            ADMIN_STATS.increment("responses_sent_total")
         except Exception as e:
             worker._handle_socket_send_error(e, "MDNS-UNICAST-REPLY")

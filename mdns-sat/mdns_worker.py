@@ -40,6 +40,7 @@ from mdns_helpers import (
 from mdns_resolver import resolve_pending_instances
 from mdns_query_handler import handle_query
 from mdns_conflicts import check_conflict_from_response
+from sat_admin import ADMIN_STATS
 
 logger = logging.getLogger("mdns-sat.worker")
 
@@ -316,6 +317,10 @@ class MdnsInterfaceWorker:
                 log_ttl_info,
             )
             self.sock.sendto(pkt, (MCAST_GRP, MDNS_PORT))
+            if ttl == 0:
+                ADMIN_STATS.increment("spoof_goodbyes_total")
+            else:
+                ADMIN_STATS.increment("spoof_announces_total")
         except Exception as e:
             self._handle_socket_send_error(e, "TX-ANNOUNCE")
 
@@ -590,6 +595,7 @@ class MdnsInterfaceWorker:
                         pkt = build_mdns_query(svc, qtype=12)
                         try:
                             self.sock.sendto(pkt, (MCAST_GRP, MDNS_PORT))
+                            ADMIN_STATS.increment("queries_sent_total")
                         except Exception as e:
                             self._handle_socket_send_error(e, f"ACTIVE-SCAN {svc}")
 
