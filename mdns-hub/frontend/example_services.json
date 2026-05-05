@@ -1,0 +1,2278 @@
+[
+  {
+    "service": {
+      "service_name": "_sonos._tcp.local",
+      "instance_name": "RINCON_38420B61BB1A01400@Wohnzimmer._sonos._tcp.local",
+      "hostname": "Sonos-AABBCC00000B.local",
+      "addresses": ["192.168.177.114"],
+      "port": 1443,
+      "txt": [
+        "infohash=INFOHASH-0004",
+        "uuid=UUID-0005",
+        "locationid=LOCATIONID-0006",
+        "wss=/websocket/api",
+        "variant=2",
+        "location=http://192.168.177.114:1400/xml/device_description.xml",
+        "sslport=1443",
+        "mhhid=MHHID-0007",
+        "hhid=HHID-0008",
+        "bootseq=63",
+        "minApiVersion=1.1.0",
+        "mdnssequence=0",
+        "hhsslport=1843",
+        "protovers=1.48.1",
+        "vers=5",
+        "info=/api/v1/players/RINCON_38420B61BB1A01400/info"
+      ],
+      "src_ips": ["192.168.177.114"],
+      "mac": "aa:bb:cc:00:00:0b",
+      "src_macs": ["aa:bb:cc:00:00:0b"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.628285Z",
+      "raw_records": []
+    },
+    "service_key": "_sonos._tcp.local|RINCON_38420B61BB1A01400@Wohnzimmer",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "friendly_name": "Wohnzimmer",
+          "vendor": "Sonos, Inc.",
+          "model": "Sonos One",
+          "mac": "aa:bb:cc:00:00:0b"
+        },
+        "vendor": {
+          "sonos": {
+            "software_version": "91.0-70070",
+            "api_version": "1.48.1",
+            "hardware_version": "1.26.1.9-2.2",
+            "display_name": "One",
+            "series_id": "A300"
+          }
+        }
+      },
+      "sonos_enriched": true,
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_sonos._tcp.local",
+      "instance_name": "RINCON_38420B61493001400@K\u00fcche._sonos._tcp.local",
+      "hostname": "Sonos-AABBCC00000C.local",
+      "addresses": ["192.168.177.121"],
+      "port": 1443,
+      "txt": [
+        "infohash=INFOHASH-0009",
+        "uuid=UUID-0010",
+        "locationid=LOCATIONID-0006",
+        "wss=/websocket/api",
+        "variant=2",
+        "location=http://192.168.177.121:1400/xml/device_description.xml",
+        "sslport=1443",
+        "mhhid=MHHID-0007",
+        "hhid=HHID-0008",
+        "bootseq=64",
+        "minApiVersion=1.1.0",
+        "mdnssequence=0",
+        "hhsslport=1843",
+        "protovers=1.48.1",
+        "vers=5",
+        "info=/api/v1/players/RINCON_38420B61493001400/info"
+      ],
+      "src_ips": ["192.168.177.121"],
+      "mac": "aa:bb:cc:00:00:0c",
+      "src_macs": ["aa:bb:cc:00:00:0c"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.625302Z",
+      "raw_records": []
+    },
+    "service_key": "_sonos._tcp.local|RINCON_38420B61493001400@K\u00fcche",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "friendly_name": "K\u00fcche",
+          "vendor": "Sonos, Inc.",
+          "model": "Sonos One",
+          "mac": "aa:bb:cc:00:00:0c"
+        },
+        "vendor": {
+          "sonos": {
+            "software_version": "91.0-70070",
+            "api_version": "1.48.1",
+            "hardware_version": "1.26.1.9-2.2",
+            "display_name": "One",
+            "series_id": "A300"
+          }
+        }
+      },
+      "sonos_enriched": true,
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_sonos._tcp.local",
+      "instance_name": "RINCON_B8E9375AAF3201400@Flur Oben._sonos._tcp.local",
+      "hostname": "Sonos-AABBCC000010.local",
+      "addresses": ["192.168.177.53"],
+      "port": 1443,
+      "txt": [
+        "wss=/websocket/api",
+        "variant=0",
+        "uuid=UUID-0014",
+        "sslport=1443",
+        "location=http://192.168.177.53:1400/xml/device_description.xml",
+        "mhhid=MHHID-0007",
+        "hhsslport=1843",
+        "hhid=HHID-0008",
+        "bootseq=387",
+        "minApiVersion=1.1.0",
+        "protovers=1.48.1",
+        "infohash=INFOHASH-0015",
+        "mdnssequence=1",
+        "vers=5",
+        "locationid=LOCATIONID-0006",
+        "info=/api/v1/players/RINCON_B8E9375AAF3201400/info"
+      ],
+      "src_ips": ["192.168.177.53"],
+      "mac": "aa:bb:cc:00:00:10",
+      "src_macs": ["aa:bb:cc:00:00:10"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.602810Z",
+      "raw_records": []
+    },
+    "service_key": "_sonos._tcp.local|RINCON_B8E9375AAF3201400@Flur Oben",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "friendly_name": "Flur Oben",
+          "vendor": "Sonos, Inc.",
+          "model": "Sonos Play:1",
+          "mac": "aa:bb:cc:00:00:10"
+        },
+        "vendor": {
+          "sonos": {
+            "software_version": "86.1-70070",
+            "api_version": "1.48.1",
+            "hardware_version": "1.8.3.7-2.0",
+            "display_name": "Play:1",
+            "series_id": "A101"
+          }
+        }
+      },
+      "sonos_enriched": true,
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_sonos._tcp.local",
+      "instance_name": "RINCON_F0F6C15983B401400@Sonos Move._sonos._tcp.local",
+      "hostname": "Sonos-AABBCC000011.local",
+      "addresses": ["192.168.177.140"],
+      "port": 1443,
+      "txt": [
+        "infohash=INFOHASH-0016",
+        "uuid=UUID-0017",
+        "locationid=LOCATIONID-0006",
+        "wss=/websocket/api",
+        "variant=2",
+        "location=http://192.168.177.140:1400/xml/device_description.xml",
+        "sslport=1443",
+        "mhhid=MHHID-0007",
+        "hhid=HHID-0008",
+        "bootseq=71",
+        "minApiVersion=1.1.0",
+        "mdnssequence=0",
+        "hhsslport=1843",
+        "protovers=1.48.1",
+        "vers=5",
+        "info=/api/v1/players/RINCON_F0F6C15983B401400/info"
+      ],
+      "src_ips": ["192.168.177.140"],
+      "mac": "aa:bb:cc:00:00:11",
+      "src_macs": ["aa:bb:cc:00:00:11"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.591585Z",
+      "raw_records": []
+    },
+    "service_key": "_sonos._tcp.local|RINCON_F0F6C15983B401400@Sonos Move",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "friendly_name": "Sonos Move",
+          "vendor": "Sonos, Inc.",
+          "model": "Sonos Move",
+          "mac": "aa:bb:cc:00:00:11"
+        },
+        "vendor": {
+          "sonos": {
+            "software_version": "91.0-70070",
+            "api_version": "1.48.1",
+            "hardware_version": "1.25.1.9-2.2",
+            "display_name": "Move",
+            "series_id": "A101"
+          }
+        }
+      },
+      "sonos_enriched": true,
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_sonos._tcp.local",
+      "instance_name": "RINCON_38420B6221E201400@K\u00fcche._sonos._tcp.local",
+      "hostname": "Sonos-AABBCC000014.local",
+      "addresses": ["192.168.177.134"],
+      "port": 1443,
+      "txt": [
+        "infohash=INFOHASH-0021",
+        "uuid=UUID-0022",
+        "locationid=LOCATIONID-0006",
+        "wss=/websocket/api",
+        "variant=2",
+        "location=http://192.168.177.134:1400/xml/device_description.xml",
+        "sslport=1443",
+        "mhhid=MHHID-0007",
+        "hhid=HHID-0008",
+        "bootseq=65",
+        "minApiVersion=1.1.0",
+        "mdnssequence=0",
+        "hhsslport=1843",
+        "protovers=1.48.1",
+        "vers=5",
+        "info=/api/v1/players/RINCON_38420B6221E201400/info"
+      ],
+      "src_ips": ["192.168.177.134"],
+      "mac": "aa:bb:cc:00:00:14",
+      "src_macs": ["aa:bb:cc:00:00:14"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.564829Z",
+      "raw_records": []
+    },
+    "service_key": "_sonos._tcp.local|RINCON_38420B6221E201400@K\u00fcche",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "friendly_name": "K\u00fcche",
+          "vendor": "Sonos, Inc.",
+          "model": "Sonos One",
+          "mac": "aa:bb:cc:00:00:14"
+        },
+        "vendor": {
+          "sonos": {
+            "software_version": "91.0-70070",
+            "api_version": "1.48.1",
+            "hardware_version": "1.26.1.9-2.2",
+            "display_name": "One",
+            "series_id": "A300"
+          }
+        }
+      },
+      "sonos_enriched": true,
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_sonos._tcp.local",
+      "instance_name": "RINCON_7828CAE9F86A01400@Mehrzweckzimmer._sonos._tcp.local",
+      "hostname": "Sonos-AABBCC000015.local",
+      "addresses": ["192.168.177.93"],
+      "port": 1443,
+      "txt": [
+        "infohash=INFOHASH-0024",
+        "uuid=UUID-0025",
+        "locationid=LOCATIONID-0006",
+        "wss=/websocket/api",
+        "variant=1",
+        "location=http://192.168.177.93:1400/xml/device_description.xml",
+        "sslport=1443",
+        "mhhid=MHHID-0007",
+        "hhid=HHID-0008",
+        "bootseq=304",
+        "minApiVersion=1.1.0",
+        "mdnssequence=0",
+        "hhsslport=1843",
+        "protovers=1.48.1",
+        "vers=5",
+        "info=/api/v1/players/RINCON_7828CAE9F86A01400/info"
+      ],
+      "src_ips": ["192.168.177.93"],
+      "mac": "aa:bb:cc:00:00:15",
+      "src_macs": ["aa:bb:cc:00:00:15"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.552553Z",
+      "raw_records": []
+    },
+    "service_key": "_sonos._tcp.local|RINCON_7828CAE9F86A01400@Mehrzweckzimmer",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "friendly_name": "Mehrzweckzimmer",
+          "vendor": "Sonos, Inc.",
+          "model": "Sonos One",
+          "mac": "aa:bb:cc:00:00:15"
+        },
+        "vendor": {
+          "sonos": {
+            "software_version": "91.0-70070",
+            "api_version": "1.48.1",
+            "hardware_version": "1.26.1.7-2.1",
+            "display_name": "One",
+            "series_id": "A201"
+          }
+        }
+      },
+      "sonos_enriched": true,
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_sonos._tcp.local",
+      "instance_name": "RINCON_F0F6C101BE5001400@K\u00fcche._sonos._tcp.local",
+      "hostname": "Sonos-AABBCC000016.local",
+      "addresses": ["192.168.177.107"],
+      "port": 1443,
+      "txt": [
+        "locationid=LOCATIONID-0006",
+        "mdnssequence=0",
+        "variant=2",
+        "infohash=INFOHASH-0026",
+        "hhsslport=1843",
+        "wss=/websocket/api",
+        "location=http://192.168.177.107:1400/xml/device_description.xml",
+        "hhid=HHID-0008",
+        "bootseq=77",
+        "uuid=UUID-0027",
+        "minApiVersion=1.1.0",
+        "sslport=1443",
+        "protovers=1.48.1",
+        "mhhid=MHHID-0007",
+        "vers=5",
+        "info=/api/v1/players/RINCON_F0F6C101BE5001400/info"
+      ],
+      "src_ips": ["192.168.177.107"],
+      "mac": "aa:bb:cc:00:00:16",
+      "src_macs": ["aa:bb:cc:00:00:16"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.541693Z",
+      "raw_records": []
+    },
+    "service_key": "_sonos._tcp.local|RINCON_F0F6C101BE5001400@K\u00fcche",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "friendly_name": "K\u00fcche",
+          "vendor": "Sonos, Inc.",
+          "model": "Sonos Sub Mini",
+          "mac": "aa:bb:cc:00:00:16"
+        },
+        "vendor": {
+          "sonos": {
+            "software_version": "91.0-70070",
+            "api_version": "1.48.1",
+            "hardware_version": "1.37.1.7-2.2",
+            "display_name": "Sub Mini",
+            "series_id": "A100"
+          }
+        }
+      },
+      "sonos_enriched": true,
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_http._tcp.local",
+      "instance_name": "shelly1-AABBCC000001._http._tcp.local",
+      "hostname": "shelly1-AABBCC000001.local",
+      "addresses": ["192.168.177.231"],
+      "port": 80,
+      "txt": [
+        "id=ID-0001",
+        "arch=esp8266",
+        "app=switch1",
+        "fw_version=1.0",
+        "fw_id=20230913-112003/v1.14.0-gcb84623",
+        "discoverable=false"
+      ],
+      "src_ips": ["192.168.177.231"],
+      "mac": "aa:bb:cc:00:00:01",
+      "src_macs": ["aa:bb:cc:00:00:01"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:49.784757Z",
+      "raw_records": []
+    },
+    "service_key": "_http._tcp.local|shelly1-AABBCC000001",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "mac": "shelly1-AABBCC000001"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_homeconnect._tcp.local",
+      "instance_name": "Oven SIEMENS HM676G0S6._homeconnect._tcp.local",
+      "hostname": "SIEMENS-HM676G0S6-AABBCC000002.local",
+      "addresses": ["192.168.177.132"],
+      "port": 80,
+      "txt": [
+        "txtvers=2",
+        "vers=66.11-2.17.1.13549",
+        "id=ID-0002",
+        "mac=AABBCC000002",
+        "brand=SIEMENS",
+        "type=Oven",
+        "vib=HM676G0S6",
+        "info=Oven"
+      ],
+      "src_ips": ["192.168.177.132"],
+      "mac": "aa:bb:cc:00:00:02",
+      "src_macs": ["aa:bb:cc:00:00:02"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.751254Z",
+      "raw_records": []
+    },
+    "service_key": "_homeconnect._tcp.local|Oven SIEMENS HM676G0S6",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "mac": "AABBCC000002"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_raop._tcp.local",
+      "instance_name": "AABBCC000003@OPUSMB-VFV5W._raop._tcp.local",
+      "hostname": "OPUSMB-VFV5W.local",
+      "addresses": ["192.168.177.217"],
+      "port": 7000,
+      "txt": [
+        "cn=0,1,2,3",
+        "da=true",
+        "et=0,3,5",
+        "ft=0x4A7FCFD5,0x38174FDE",
+        "sf=0x204",
+        "md=0,1,2",
+        "am=Mac16,12",
+        "pk=ID0001",
+        "tp=UDP",
+        "vn=65537",
+        "vs=920.10.1",
+        "vv=0"
+      ],
+      "src_ips": ["192.168.177.217"],
+      "mac": "aa:bb:cc:00:00:04",
+      "src_macs": ["aa:bb:cc:00:00:04"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.652386Z",
+      "raw_records": []
+    },
+    "service_key": "_raop._tcp.local|AABBCC000003@OPUSMB-VFV5W",
+    "meta": {
+      "normalized": {},
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_companion-link._tcp.local",
+      "instance_name": "OPUSMB-VFV5W._companion-link._tcp.local",
+      "hostname": "OPUSMB-VFV5W.local",
+      "addresses": ["192.168.177.217"],
+      "port": 53823,
+      "txt": [
+        "rpMac=0",
+        "rpHN=aabbcc000005",
+        "rpFl=0x20000",
+        "rpHA=aabbcc000006",
+        "rpVr=715.2",
+        "rpAD=aabbcc000007",
+        "rpHI=aabbcc000008",
+        "rpBA=aa:bb:cc:00:00:09"
+      ],
+      "src_ips": ["192.168.177.217"],
+      "mac": "aa:bb:cc:00:00:04",
+      "src_macs": ["aa:bb:cc:00:00:04"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.652386Z",
+      "raw_records": []
+    },
+    "service_key": "_companion-link._tcp.local|OPUSMB-VFV5W",
+    "meta": {
+      "normalized": {},
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_homeconnect._tcp.local",
+      "instance_name": "Dishwasher SIEMENS SN61IX12TE._homeconnect._tcp.local",
+      "hostname": "siemens-dishwasher----2147483648.local",
+      "addresses": ["192.168.177.133"],
+      "port": 443,
+      "txt": [
+        "txtvers=2",
+        "vers=5.4-3.11.4.1",
+        "id=ID-0003",
+        "mac=AABBCC00000A",
+        "brand=SIEMENS",
+        "type=Dishwasher",
+        "vib=SN61IX12TE",
+        "info=",
+        "tls=true"
+      ],
+      "src_ips": ["192.168.177.133"],
+      "mac": "aa:bb:cc:00:00:0a",
+      "src_macs": ["aa:bb:cc:00:00:0a"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.631704Z",
+      "raw_records": []
+    },
+    "service_key": "_homeconnect._tcp.local|Dishwasher SIEMENS SN61IX12TE",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "mac": "AABBCC00000A"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_raop._tcp.local",
+      "instance_name": "AABBCC00000B@Wohnzimmer._raop._tcp.local",
+      "hostname": "Sonos-AABBCC00000B.local",
+      "addresses": ["192.168.177.114"],
+      "port": 7000,
+      "txt": [
+        "cn=0,1",
+        "da=true",
+        "et=0,4",
+        "ft=0x445F8A00,0x1C340",
+        "fv=p20.91.0-70070",
+        "md=0,1,2",
+        "am=One",
+        "sf=0x4",
+        "tp=UDP",
+        "vn=65537",
+        "vs=366.0",
+        "pk=ID0002"
+      ],
+      "src_ips": ["192.168.177.114"],
+      "mac": "aa:bb:cc:00:00:0b",
+      "src_macs": ["aa:bb:cc:00:00:0b"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.628285Z",
+      "raw_records": []
+    },
+    "service_key": "_raop._tcp.local|AABBCC00000B@Wohnzimmer",
+    "meta": {
+      "normalized": {},
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_airplay._tcp.local",
+      "instance_name": "Samsung Wohnzimmer._airplay._tcp.local",
+      "hostname": "Samsung.local",
+      "addresses": ["192.168.177.131"],
+      "port": 7000,
+      "txt": [
+        "acl=0",
+        "deviceid=DEVICEID-0011",
+        "features=0x7F8AD0,0x38BCF46",
+        "fex=0Ip/AEbPiwNACA",
+        "rsf=0x3",
+        "fv=p20.T-PTMDEUC-1710.0",
+        "at=0x1",
+        "flags=0x244",
+        "model=QBQ9X",
+        "integrator=Samsung",
+        "manufacturer=Samsung",
+        "serialNumber=SN-0001",
+        "protovers=1.1",
+        "srcvers=377.40.00",
+        "pi=PI-0012",
+        "psi=00000000-0000-0000-0000-000000000001",
+        "gid=GID-0013",
+        "gcgl=0",
+        "pk=ID0004"
+      ],
+      "src_ips": ["192.168.177.131"],
+      "mac": "aa:bb:cc:00:00:0d",
+      "src_macs": ["aa:bb:cc:00:00:0d"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.614418Z",
+      "raw_records": []
+    },
+    "service_key": "_airplay._tcp.local|Samsung Wohnzimmer",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "mac": "aa:bb:cc:00:00:0e",
+          "model": "QBQ9X",
+          "vendor": "Samsung"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_airplay._tcp.local",
+      "instance_name": "Sonos Move._airplay._tcp.local",
+      "hostname": "Sonos-AABBCC000011.local",
+      "addresses": ["192.168.177.140"],
+      "port": 7000,
+      "txt": [
+        "acl=0",
+        "deviceid=DEVICEID-0018",
+        "features=0x445F8A00,0x1C340",
+        "rsf=0x0",
+        "fv=p20.91.0-70070",
+        "flags=0x4",
+        "model=Move",
+        "manufacturer=Sonos",
+        "serialNumber=SN-0002",
+        "protovers=1.1",
+        "srcvers=366.0",
+        "pi=DEVICEID-0018",
+        "gid=DEVICEID-0018",
+        "gcgl=0",
+        "pk=ID0007"
+      ],
+      "src_ips": ["192.168.177.140"],
+      "mac": "aa:bb:cc:00:00:11",
+      "src_macs": ["aa:bb:cc:00:00:11"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.591585Z",
+      "raw_records": []
+    },
+    "service_key": "_airplay._tcp.local|Sonos Move",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "mac": "aa:bb:cc:00:00:11",
+          "model": "Move",
+          "vendor": "Sonos"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": [
+        {
+          "sat_id": "msa-sat-pi",
+          "use_mgmt": false,
+          "vlans": [],
+          "iface": ["eth0.222"]
+        }
+      ]
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_hap._tcp.local",
+      "instance_name": "GARDENA smart Gateway._hap._tcp.local",
+      "hostname": "GARDENA-2ca168.local",
+      "addresses": ["192.168.177.81"],
+      "port": 8001,
+      "txt": ["c#=31", "ff=1", "id=ID-0019", "md=smart Gateway", "pv=1.1", "s#=46", "sf=0", "ci=2", "sh=710fDg=="],
+      "src_ips": ["192.168.177.81"],
+      "mac": "aa:bb:cc:00:00:13",
+      "src_macs": ["aa:bb:cc:00:00:13"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.576879Z",
+      "raw_records": []
+    },
+    "service_key": "_hap._tcp.local|GARDENA smart Gateway",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "mac": "aa:bb:cc:00:00:12"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_airplay._tcp.local",
+      "instance_name": "K\u00fcche._airplay._tcp.local",
+      "hostname": "Sonos-AABBCC000014.local",
+      "addresses": ["192.168.177.134"],
+      "port": 7000,
+      "txt": [
+        "acl=0",
+        "deviceid=DEVICEID-0020",
+        "features=0x445F8A00,0x1C340",
+        "rsf=0x0",
+        "fv=p20.91.0-70070",
+        "flags=0x4",
+        "model=One",
+        "manufacturer=Sonos",
+        "serialNumber=SN-0003",
+        "protovers=1.1",
+        "srcvers=366.0",
+        "pi=DEVICEID-0020",
+        "gid=DEVICEID-0020",
+        "gcgl=0",
+        "pk=ID0009"
+      ],
+      "src_ips": ["192.168.177.134"],
+      "mac": "aa:bb:cc:00:00:14",
+      "src_macs": ["aa:bb:cc:00:00:14"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.564829Z",
+      "raw_records": []
+    },
+    "service_key": "_airplay._tcp.local|K\u00fcche",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "mac": "aa:bb:cc:00:00:14",
+          "model": "One",
+          "vendor": "Sonos"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": [
+        {
+          "sat_id": "msa-sat-pi",
+          "use_mgmt": false,
+          "vlans": [],
+          "iface": ["eth0.222"]
+        }
+      ]
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_raop._tcp.local",
+      "instance_name": "AABBCC000014@K\u00fcche._raop._tcp.local",
+      "hostname": "Sonos-AABBCC000014.local",
+      "addresses": ["192.168.177.134"],
+      "port": 7000,
+      "txt": [
+        "cn=0,1",
+        "da=true",
+        "et=0,4",
+        "ft=0x445F8A00,0x1C340",
+        "fv=p20.91.0-70070",
+        "md=0,1,2",
+        "am=One",
+        "sf=0x4",
+        "tp=UDP",
+        "vn=65537",
+        "vs=366.0",
+        "pk=ID0009"
+      ],
+      "src_ips": ["192.168.177.134"],
+      "mac": "aa:bb:cc:00:00:14",
+      "src_macs": ["aa:bb:cc:00:00:14"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.564829Z",
+      "raw_records": []
+    },
+    "service_key": "_raop._tcp.local|AABBCC000014@K\u00fcche",
+    "meta": {
+      "normalized": {},
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_airplay._tcp.local",
+      "instance_name": "Mehrzweckzimmer._airplay._tcp.local",
+      "hostname": "Sonos-AABBCC000015.local",
+      "addresses": ["192.168.177.93"],
+      "port": 7000,
+      "txt": [
+        "acl=0",
+        "deviceid=DEVICEID-0023",
+        "features=0x445F8A00,0x1C340",
+        "rsf=0x0",
+        "fv=p20.91.0-70070",
+        "flags=0x4",
+        "model=One",
+        "manufacturer=Sonos",
+        "serialNumber=SN-0004",
+        "protovers=1.1",
+        "srcvers=366.0",
+        "pi=DEVICEID-0023",
+        "gid=DEVICEID-0023",
+        "gcgl=0",
+        "pk=ID0011"
+      ],
+      "src_ips": ["192.168.177.93"],
+      "mac": "aa:bb:cc:00:00:15",
+      "src_macs": ["aa:bb:cc:00:00:15"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.552553Z",
+      "raw_records": []
+    },
+    "service_key": "_airplay._tcp.local|Mehrzweckzimmer",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "mac": "aa:bb:cc:00:00:15",
+          "model": "One",
+          "vendor": "Sonos"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_raop._tcp.local",
+      "instance_name": "AABBCC000015@Mehrzweckzimmer._raop._tcp.local",
+      "hostname": "Sonos-AABBCC000015.local",
+      "addresses": ["192.168.177.93"],
+      "port": 7000,
+      "txt": [
+        "cn=0,1",
+        "da=true",
+        "et=0,4",
+        "ft=0x445F8A00,0x1C340",
+        "fv=p20.91.0-70070",
+        "md=0,1,2",
+        "am=One",
+        "sf=0x4",
+        "tp=UDP",
+        "vn=65537",
+        "vs=366.0",
+        "pk=ID0011"
+      ],
+      "src_ips": ["192.168.177.93"],
+      "mac": "aa:bb:cc:00:00:15",
+      "src_macs": ["aa:bb:cc:00:00:15"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.552553Z",
+      "raw_records": []
+    },
+    "service_key": "_raop._tcp.local|AABBCC000015@Mehrzweckzimmer",
+    "meta": {
+      "normalized": {},
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_ipp._tcp.local",
+      "instance_name": "Drucker Mansao._ipp._tcp.local",
+      "hostname": "DruckerMansao.local",
+      "addresses": ["192.168.177.143"],
+      "port": 631,
+      "txt": [
+        "txtvers=1",
+        "adminurl=http://DruckerMansao.local./#hId-pgAirPrint",
+        "note=Home",
+        "priority=20",
+        "qtotal=1",
+        "TLS=1.2",
+        "rp=ipp/print",
+        "UUID=UUID-0028",
+        "product=(HP ENVY 6400 series)",
+        "ty=HP ENVY 6400 series",
+        "usb_MFG=HP",
+        "usb_MDL=ENVY 6400 series",
+        "Color=T",
+        "Duplex=T",
+        "pdl=application/vnd.hp-PCL,image/jpeg,image/urf,image/pwg-raster,application/PCLm",
+        "PaperMax=legal-A4",
+        "URF=CP1,MT1-2-8-9-10-11,PQ3-4-5,RS300-600,SRGB24,OB9,OFU0,W8-16,DEVW8-16,DEVRGB24-48,ADOBERGB24-48,DM3,IS1,V1.5,FN3",
+        "kind=document,envelope,photo,postcard",
+        "Scan=T",
+        "mopria-certified=2.0",
+        "Fax=F"
+      ],
+      "src_ips": ["192.168.177.143"],
+      "mac": "aa:bb:cc:00:00:1a",
+      "src_macs": ["aa:bb:cc:00:00:1a"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.514499Z",
+      "raw_records": []
+    },
+    "service_key": "_ipp._tcp.local|Drucker Mansao",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "friendly_name": "HP ENVY 6400 series",
+          "vendor": "HP",
+          "model": "ENVY 6400 series"
+        }
+      },
+      "online": true,
+      "spoof_enabled": true,
+      "spoof_note": "",
+      "spoof_targets": [
+        {
+          "sat_id": "msa-sat-pi",
+          "use_mgmt": false,
+          "vlans": [],
+          "iface": ["eth0.222"]
+        }
+      ]
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_ipps._tcp.local",
+      "instance_name": "Drucker Mansao._ipps._tcp.local",
+      "hostname": "DruckerMansao.local",
+      "addresses": ["192.168.177.143"],
+      "port": 631,
+      "txt": [
+        "txtvers=1",
+        "adminurl=http://DruckerMansao.local./#hId-pgAirPrint",
+        "note=Home",
+        "priority=30",
+        "qtotal=1",
+        "TLS=1.2",
+        "rp=ipp/print",
+        "UUID=UUID-0028",
+        "product=(HP ENVY 6400 series)",
+        "ty=HP ENVY 6400 series",
+        "usb_MFG=HP",
+        "usb_MDL=ENVY 6400 series",
+        "Color=T",
+        "Duplex=T",
+        "pdl=application/vnd.hp-PCL,image/jpeg,image/urf,image/pwg-raster,application/PCLm",
+        "PaperMax=legal-A4",
+        "URF=CP1,MT1-2-8-9-10-11,PQ3-4-5,RS300-600,SRGB24,OB9,OFU0,W8-16,DEVW8-16,DEVRGB24-48,ADOBERGB24-48,DM3,IS1,V1.5,FN3",
+        "kind=document,envelope,photo,postcard",
+        "Scan=T",
+        "mopria-certified=2.0",
+        "Fax=F"
+      ],
+      "src_ips": ["192.168.177.143"],
+      "mac": "aa:bb:cc:00:00:1a",
+      "src_macs": ["aa:bb:cc:00:00:1a"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.514499Z",
+      "raw_records": []
+    },
+    "service_key": "_ipps._tcp.local|Drucker Mansao",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "friendly_name": "HP ENVY 6400 series",
+          "vendor": "HP",
+          "model": "ENVY 6400 series"
+        }
+      },
+      "online": true,
+      "spoof_enabled": true,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_scanner._tcp.local",
+      "instance_name": "Drucker Mansao._scanner._tcp.local",
+      "hostname": "DruckerMansao.local",
+      "addresses": ["192.168.177.143"],
+      "port": 8080,
+      "txt": [
+        "txtvers=1",
+        "adminurl=http://DruckerMansao.local.",
+        "note=Home",
+        "UUID=UUID-0028",
+        "ty=HP ENVY 6400 series",
+        "mfg=HP",
+        "mdl=ENVY 6400 series",
+        "flatbed=T",
+        "feeder=T",
+        "button=T"
+      ],
+      "src_ips": ["192.168.177.143"],
+      "mac": "aa:bb:cc:00:00:1a",
+      "src_macs": ["aa:bb:cc:00:00:1a"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.514499Z",
+      "raw_records": []
+    },
+    "service_key": "_scanner._tcp.local|Drucker Mansao",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "friendly_name": "HP ENVY 6400 series",
+          "vendor": "HP",
+          "model": "ENVY 6400 series"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_uscans._tcp.local",
+      "instance_name": "Drucker Mansao._uscans._tcp.local",
+      "hostname": "DruckerMansao.local",
+      "addresses": ["192.168.177.143"],
+      "port": 443,
+      "txt": [
+        "txtvers=1",
+        "adminurl=http://DruckerMansao.local.",
+        "note=Home",
+        "UUID=UUID-0028",
+        "vers=2.63",
+        "representation=images/printer.png",
+        "rs=eSCL",
+        "ty=HP ENVY 6400 series",
+        "pdl=application/octet-stream,application/pdf,image/jpeg",
+        "cs=binary,color,grayscale",
+        "is=platen,adf",
+        "duplex=F",
+        "mopria-certified-scan=1.3",
+        "usb_MFG=HP"
+      ],
+      "src_ips": ["192.168.177.143"],
+      "mac": "aa:bb:cc:00:00:1a",
+      "src_macs": ["aa:bb:cc:00:00:1a"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.514499Z",
+      "raw_records": []
+    },
+    "service_key": "_uscans._tcp.local|Drucker Mansao",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "friendly_name": "HP ENVY 6400 series",
+          "vendor": "HP"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_uscan._tcp.local",
+      "instance_name": "Drucker Mansao._uscan._tcp.local",
+      "hostname": "DruckerMansao.local",
+      "addresses": ["192.168.177.143"],
+      "port": 8080,
+      "txt": [
+        "txtvers=1",
+        "adminurl=http://DruckerMansao.local.",
+        "note=Home",
+        "UUID=UUID-0028",
+        "vers=2.63",
+        "representation=images/printer.png",
+        "rs=eSCL",
+        "ty=HP ENVY 6400 series",
+        "pdl=application/octet-stream,application/pdf,image/jpeg",
+        "cs=binary,color,grayscale",
+        "is=platen,adf",
+        "duplex=F",
+        "mopria-certified-scan=1.3",
+        "usb_MFG=HP"
+      ],
+      "src_ips": ["192.168.177.143"],
+      "mac": "aa:bb:cc:00:00:1a",
+      "src_macs": ["aa:bb:cc:00:00:1a"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.514499Z",
+      "raw_records": []
+    },
+    "service_key": "_uscan._tcp.local|Drucker Mansao",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "friendly_name": "HP ENVY 6400 series",
+          "vendor": "HP"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_pdl-datastream._tcp.local",
+      "instance_name": "Drucker Mansao._pdl-datastream._tcp.local",
+      "hostname": "DruckerMansao.local",
+      "addresses": ["192.168.177.143"],
+      "port": 9100,
+      "txt": [
+        "txtvers=1",
+        "rp=",
+        "priority=40",
+        "UUID=UUID-0028",
+        "mac=aa:bb:cc:00:00:1a",
+        "usb_MFG=HP",
+        "usb_MDL=ENVY 6400 series",
+        "pdl=application/vnd.hp-PCL,image/jpeg,image/urf,image/pwg-raster,application/PCLm,"
+      ],
+      "src_ips": ["192.168.177.143"],
+      "mac": "aa:bb:cc:00:00:1a",
+      "src_macs": ["aa:bb:cc:00:00:1a"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.514499Z",
+      "raw_records": []
+    },
+    "service_key": "_pdl-datastream._tcp.local|Drucker Mansao",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "mac": "aa:bb:cc:00:00:1a",
+          "vendor": "HP",
+          "model": "ENVY 6400 series"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_http._tcp.local",
+      "instance_name": "shelly1-AABBCC00001C._http._tcp.local",
+      "hostname": "shelly1-AABBCC00001C.local",
+      "addresses": ["192.168.177.225"],
+      "port": 80,
+      "txt": [
+        "id=ID-0029",
+        "arch=esp8266",
+        "app=switch1",
+        "fw_version=1.0",
+        "fw_id=20230913-112003/v1.14.0-gcb84623",
+        "discoverable=false"
+      ],
+      "src_ips": ["192.168.177.225"],
+      "mac": "aa:bb:cc:00:00:1c",
+      "src_macs": ["aa:bb:cc:00:00:1c"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.496352Z",
+      "raw_records": []
+    },
+    "service_key": "_http._tcp.local|shelly1-AABBCC00001C",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "mac": "shelly1-AABBCC00001C"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_esphomelib._tcp.local",
+      "instance_name": "ble-tracker._esphomelib._tcp.local",
+      "hostname": "ble-tracker.local",
+      "addresses": ["192.168.177.136"],
+      "port": 6053,
+      "txt": [
+        "api_encryption=Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+        "network=wifi",
+        "board=esp32dev",
+        "platform=ESP32",
+        "mac=aabbcc00001d",
+        "version=2025.11.0",
+        "friendly_name=ble-tracker"
+      ],
+      "src_ips": ["192.168.177.136"],
+      "mac": "aa:bb:cc:00:00:1d",
+      "src_macs": ["aa:bb:cc:00:00:1d"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.477627Z",
+      "raw_records": []
+    },
+    "service_key": "_esphomelib._tcp.local|ble-tracker",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "model": "esp32dev",
+          "mac": "aabbcc00001d",
+          "friendly_name": "ble-tracker"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_amzn-wplay._tcp.local",
+      "instance_name": "amzn.dmgr:ID0013:xnVDMM+4u1:102033._amzn-wplay._tcp.local",
+      "hostname": "192-168-177-70-fritz-box.local",
+      "addresses": ["192.168.177.70"],
+      "port": 38645,
+      "txt": [
+        "a=0",
+        "ad=A1WZKXFLI43K86",
+        "pv=1",
+        "f=0",
+        "mv=2",
+        "dpv=1",
+        "n=Fire TV Wohnzimmer",
+        "at=D8+P+/zIK4yQ",
+        "s=0",
+        "t=2",
+        "u=ID0013",
+        "v=2",
+        "sp=37331",
+        "tr=tcp"
+      ],
+      "src_ips": ["192.168.177.70"],
+      "mac": "aa:bb:cc:00:00:1e",
+      "src_macs": ["aa:bb:cc:00:00:1e"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.460566Z",
+      "raw_records": []
+    },
+    "service_key": "_amzn-wplay._tcp.local|amzn.dmgr:ID0013:xnVDMM+4u1:102033",
+    "meta": {
+      "normalized": {},
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_hap._tcp.local",
+      "instance_name": "HASS Bridge 0W 969455._hap._tcp.local",
+      "hostname": "ID0014-hap.local",
+      "addresses": ["192.168.177.130"],
+      "port": 21066,
+      "txt": ["md=HASS Bridge 0W", "pv=1.1", "id=ID-0030", "c#=1383", "s#=1", "ff=0", "ci=2", "sf=0", "sh=KN7fhg=="],
+      "src_ips": ["192.168.177.130"],
+      "mac": "aa:bb:cc:00:00:20",
+      "src_macs": ["aa:bb:cc:00:00:20"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.446279Z",
+      "raw_records": []
+    },
+    "service_key": "_hap._tcp.local|HASS Bridge 0W 969455",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "mac": "aa:bb:cc:00:00:1f"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_home-assistant._tcp.local",
+      "instance_name": "Lange Stra\u00dfe._home-assistant._tcp.local",
+      "hostname": "ID0014.local",
+      "addresses": ["192.168.177.130"],
+      "port": 8123,
+      "txt": [
+        "location_name=Lange Stra\u00dfe",
+        "uuid=UUID-0031",
+        "version=2025.11.3",
+        "external_url=https://ha.amorzinho.de",
+        "internal_url=http://192.168.177.130:8123",
+        "base_url=https://ha.amorzinho.de",
+        "requires_api_password=True"
+      ],
+      "src_ips": ["192.168.177.130"],
+      "mac": "aa:bb:cc:00:00:20",
+      "src_macs": ["aa:bb:cc:00:00:20"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.446279Z",
+      "raw_records": []
+    },
+    "service_key": "_home-assistant._tcp.local|Lange Stra\u00dfe",
+    "meta": {
+      "normalized": {},
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_http._tcp.local",
+      "instance_name": "shellyem3-AABBCC000022._http._tcp.local",
+      "hostname": "shellyem3-AABBCC000022.local",
+      "addresses": ["192.168.177.76"],
+      "port": 80,
+      "txt": [
+        "id=ID-0033",
+        "arch=esp8266",
+        "app=shellyem3",
+        "fw_version=1.0",
+        "fw_id=20230913-114244/v1.14.0-gcb84623",
+        "discoverable=false"
+      ],
+      "src_ips": ["192.168.177.76"],
+      "mac": "aa:bb:cc:00:00:22",
+      "src_macs": ["aa:bb:cc:00:00:22"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.436273Z",
+      "raw_records": []
+    },
+    "service_key": "_http._tcp.local|shellyem3-AABBCC000022",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "mac": "shellyem3-AABBCC000022"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_esphomelib._tcp.local",
+      "instance_name": "gaszaehler._esphomelib._tcp.local",
+      "hostname": "gaszaehler.local",
+      "addresses": ["192.168.177.82"],
+      "port": 6053,
+      "txt": [
+        "api_encryption=Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+        "network=wifi",
+        "board=esp01_1m",
+        "platform=ESP8266",
+        "mac=aabbcc000023",
+        "version=2025.11.1",
+        "friendly_name=Gasz\u00e4hler"
+      ],
+      "src_ips": ["192.168.177.82"],
+      "mac": "aa:bb:cc:00:00:23",
+      "src_macs": ["aa:bb:cc:00:00:23"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.426512Z",
+      "raw_records": []
+    },
+    "service_key": "_esphomelib._tcp.local|gaszaehler",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "model": "esp01_1m",
+          "mac": "aabbcc000023",
+          "friendly_name": "Gasz\u00e4hler"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_esphomelib._tcp.local",
+      "instance_name": "heizungsfuehler._esphomelib._tcp.local",
+      "hostname": "heizungsfuehler.local",
+      "addresses": ["192.168.177.126"],
+      "port": 6053,
+      "txt": [
+        "api_encryption=Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+        "network=wifi",
+        "board=d1_mini",
+        "platform=ESP8266",
+        "mac=aabbcc000024",
+        "version=2024.9.1"
+      ],
+      "src_ips": ["192.168.177.126"],
+      "mac": "aa:bb:cc:00:00:24",
+      "src_macs": ["aa:bb:cc:00:00:24"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.416079Z",
+      "raw_records": []
+    },
+    "service_key": "_esphomelib._tcp.local|heizungsfuehler",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "model": "d1_mini",
+          "mac": "aabbcc000024"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_http._tcp.local",
+      "instance_name": "shelly1-AABBCC000025._http._tcp.local",
+      "hostname": "shelly1-AABBCC000025.local",
+      "addresses": ["192.168.177.215"],
+      "port": 80,
+      "txt": [
+        "id=ID-0034",
+        "arch=esp8266",
+        "app=switch1",
+        "fw_version=1.0",
+        "fw_id=20230913-112003/v1.14.0-gcb84623",
+        "discoverable=false"
+      ],
+      "src_ips": ["192.168.177.215"],
+      "mac": "aa:bb:cc:00:00:25",
+      "src_macs": ["aa:bb:cc:00:00:25"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.391129Z",
+      "raw_records": []
+    },
+    "service_key": "_http._tcp.local|shelly1-AABBCC000025",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "mac": "shelly1-AABBCC000025"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_amzn-wplay._tcp.local",
+      "instance_name": "amzn.dmgr:ID0015:IWtzu2uork:351720._amzn-wplay._tcp.local",
+      "hostname": "amazon-eb231f074-fritz-box.local",
+      "addresses": ["192.168.177.20"],
+      "port": 39326,
+      "txt": [
+        "s=0",
+        "at=D8+P+/zIK4yQ",
+        "tr=tcp",
+        "n=Fire TV Schlafzimmer",
+        "sp=44991",
+        "pv=1",
+        "mv=2",
+        "v=2",
+        "u=ID0015",
+        "a=0",
+        "ad=AKPGW064GI9HE",
+        "dpv=1",
+        "t=2",
+        "c=aa:bb:cc:00:00:26",
+        "f=0"
+      ],
+      "src_ips": ["192.168.177.20"],
+      "mac": "aa:bb:cc:00:00:27",
+      "src_macs": ["aa:bb:cc:00:00:27"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.380414Z",
+      "raw_records": []
+    },
+    "service_key": "_amzn-wplay._tcp.local|amzn.dmgr:ID0015:IWtzu2uork:351720",
+    "meta": {
+      "normalized": {},
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_esphomelib._tcp.local",
+      "instance_name": "badezimmer-fbh._esphomelib._tcp.local",
+      "hostname": "badezimmer-fbh.local",
+      "addresses": ["192.168.177.162"],
+      "port": 6053,
+      "txt": [
+        "api_encryption=Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+        "network=wifi",
+        "board=d1_mini",
+        "platform=ESP8266",
+        "mac=aabbcc000028",
+        "version=2024.5.4",
+        "friendly_name=Badezimmer FBH"
+      ],
+      "src_ips": ["192.168.177.162"],
+      "mac": "aa:bb:cc:00:00:28",
+      "src_macs": ["aa:bb:cc:00:00:28"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.367903Z",
+      "raw_records": []
+    },
+    "service_key": "_esphomelib._tcp.local|badezimmer-fbh",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "model": "d1_mini",
+          "mac": "aabbcc000028",
+          "friendly_name": "Badezimmer FBH"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_airplay._tcp.local",
+      "instance_name": "OPUSMB-VFV5W._airplay._tcp.local",
+      "hostname": "OPUSMB-VFV5W.local",
+      "addresses": ["192.168.177.217"],
+      "port": 7000,
+      "txt": [
+        "act=2",
+        "acl=0",
+        "deviceid=DEVICEID-0035",
+        "fex=1c9/St5PFzg2IYxA",
+        "features=0x4A7FCFD5,0x38174FDE",
+        "rsf=0x8",
+        "flags=0x204",
+        "gid=GID-0036",
+        "igl=0",
+        "gcgl=0",
+        "model=Mac16,12",
+        "at=4",
+        "protovers=1.1",
+        "pi=PI-0037",
+        "psi=00000000-0000-0000-0000-000000000006",
+        "pk=ID0001",
+        "srcvers=920.10.1"
+      ],
+      "src_ips": ["192.168.177.217"],
+      "mac": "aa:bb:cc:00:00:04",
+      "src_macs": ["aa:bb:cc:00:00:04"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:02:41.475049Z",
+      "raw_records": []
+    },
+    "service_key": "_airplay._tcp.local|OPUSMB-VFV5W",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "mac": "aa:bb:cc:00:00:03",
+          "model": "Mac16,12"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_airplay._tcp.local",
+      "instance_name": "Wohnzimmer._airplay._tcp.local",
+      "hostname": "Sonos-AABBCC00000B.local",
+      "addresses": ["192.168.177.114"],
+      "port": 7000,
+      "txt": [
+        "acl=0",
+        "deviceid=DEVICEID-0038",
+        "features=0x445F8A00,0x1C340",
+        "rsf=0x0",
+        "fv=p20.91.0-70070",
+        "flags=0x4",
+        "model=One",
+        "manufacturer=Sonos",
+        "serialNumber=SN-0005",
+        "protovers=1.1",
+        "srcvers=366.0",
+        "pi=DEVICEID-0038",
+        "gid=DEVICEID-0038",
+        "gcgl=0",
+        "pk=ID0002"
+      ],
+      "src_ips": ["192.168.177.114"],
+      "mac": "aa:bb:cc:00:00:0b",
+      "src_macs": ["aa:bb:cc:00:00:0b"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:02:41.459177Z",
+      "raw_records": []
+    },
+    "service_key": "_airplay._tcp.local|Wohnzimmer",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "mac": "aa:bb:cc:00:00:0b",
+          "model": "One",
+          "vendor": "Sonos"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": [
+        {
+          "sat_id": "mdns-sat-2",
+          "use_mgmt": false,
+          "vlans": [],
+          "iface": ["ens160.222"]
+        }
+      ]
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_raop._tcp.local",
+      "instance_name": "AABBCC000011@Sonos Move._raop._tcp.local",
+      "hostname": "Sonos-AABBCC000011.local",
+      "addresses": ["192.168.177.140"],
+      "port": 7000,
+      "txt": [
+        "cn=0,1",
+        "da=true",
+        "et=0,4",
+        "ft=0x445F8A00,0x1C340",
+        "fv=p20.91.0-70070",
+        "md=0,1,2",
+        "am=Move",
+        "sf=0x4",
+        "tp=UDP",
+        "vn=65537",
+        "vs=366.0",
+        "pk=ID0007"
+      ],
+      "src_ips": ["192.168.177.140"],
+      "mac": "aa:bb:cc:00:00:11",
+      "src_macs": ["aa:bb:cc:00:00:11"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:02:41.439931Z",
+      "raw_records": []
+    },
+    "service_key": "_raop._tcp.local|AABBCC000011@Sonos Move",
+    "meta": {
+      "normalized": {},
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_esphomelib._tcp.local",
+      "instance_name": "garage-links._esphomelib._tcp.local",
+      "hostname": "garage-links.local",
+      "addresses": ["192.168.177.156"],
+      "port": 6053,
+      "txt": [
+        "api_encryption=Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+        "network=ethernet",
+        "board=esp32-poe-iso",
+        "platform=ESP32",
+        "mac=aabbcc000036",
+        "version=2024.4.2",
+        "friendly_name=Garage Links"
+      ],
+      "src_ips": ["192.168.177.156"],
+      "mac": "aa:bb:cc:00:00:37",
+      "src_macs": ["aa:bb:cc:00:00:37"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:01:41.091833Z",
+      "raw_records": []
+    },
+    "service_key": "_esphomelib._tcp.local|garage-links",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "model": "esp32-poe-iso",
+          "mac": "aabbcc000036",
+          "friendly_name": "Garage Links"
+        }
+      },
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_matterd._udp.local",
+      "instance_name": "E18C0766D2501908._matterd._udp.local",
+      "hostname": "AABBCC00001E.local",
+      "addresses": ["192.168.177.70"],
+      "port": 5550,
+      "txt": ["VP=65521+32769", "DT=35", "DN=Fire TV Wohnzimmer", "CP=1"],
+      "src_ips": ["192.168.177.70"],
+      "mac": "aa:bb:cc:00:00:1e",
+      "src_macs": ["aa:bb:cc:00:00:1e"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T20:03:41.317178Z",
+      "raw_records": []
+    },
+    "service_key": "_matterd._udp.local|E18C0766D2501908",
+    "meta": {
+      "normalized": {},
+      "online": true,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_esphomelib._tcp.local",
+      "instance_name": "garage-rechts._esphomelib._tcp.local",
+      "hostname": "garage-rechts.local",
+      "addresses": ["192.168.177.159"],
+      "port": 6053,
+      "txt": [
+        "api_encryption=Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+        "network=ethernet",
+        "board=esp32-poe-iso",
+        "platform=ESP32",
+        "mac=aabbcc000038",
+        "version=2025.7.2",
+        "friendly_name=Garage Rechts"
+      ],
+      "src_ips": ["192.168.177.159"],
+      "mac": "aa:bb:cc:00:00:39",
+      "src_macs": ["aa:bb:cc:00:00:39"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T19:45:37.579229Z",
+      "raw_records": []
+    },
+    "service_key": "_esphomelib._tcp.local|garage-rechts",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "model": "esp32-poe-iso",
+          "mac": "aabbcc000038",
+          "friendly_name": "Garage Rechts"
+        }
+      },
+      "online": false,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_amzn-wplay._tcp.local",
+      "instance_name": "amzn.dmgr:ID0013:xnVDMM+4u1:771682._amzn-wplay._tcp.local",
+      "hostname": "192-168-177-70.local",
+      "addresses": ["192.168.177.70"],
+      "port": 42259,
+      "txt": [
+        "a=0",
+        "ad=A1WZKXFLI43K86",
+        "pv=1",
+        "f=0",
+        "mv=2",
+        "dpv=1",
+        "n=Fire TV Wohnzimmer",
+        "at=D8+P+/zIK4yQ",
+        "s=0",
+        "t=2",
+        "u=ID0013",
+        "v=2",
+        "sp=46427",
+        "tr=tcp"
+      ],
+      "src_ips": ["192.168.177.70"],
+      "mac": "aa:bb:cc:00:00:1e",
+      "src_macs": ["aa:bb:cc:00:00:1e"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T19:42:36.541166Z",
+      "raw_records": []
+    },
+    "service_key": "_amzn-wplay._tcp.local|amzn.dmgr:ID0013:xnVDMM+4u1:771682",
+    "meta": {
+      "normalized": {},
+      "online": false,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_remotepairing._tcp.local",
+      "instance_name": "00000000-0000-0000-0000-00000000000a._remotepairing._tcp.local",
+      "hostname": "Iphone-v-B.local",
+      "addresses": ["192.168.177.179", "192.168.222.114"],
+      "port": 49152,
+      "txt": ["identifier=00000000-0000-0000-0000-00000000000a", "authTag=Qo8sTHHf", "ver=24", "minVer=8", "flags=0"],
+      "src_ips": ["192.168.177.179", "192.168.222.114"],
+      "mac": "aa:bb:cc:00:00:35",
+      "src_macs": ["aa:bb:cc:00:00:35"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T18:52:47.733383Z",
+      "raw_records": []
+    },
+    "service_key": "_remotepairing._tcp.local|00000000-0000-0000-0000-00000000000a",
+    "meta": {
+      "normalized": {},
+      "online": false,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_remotepairing._tcp.local",
+      "instance_name": "00000000-0000-0000-0000-00000000000b._remotepairing._tcp.local",
+      "hostname": "Iphone-v-B.local",
+      "addresses": ["192.168.177.179"],
+      "port": 49152,
+      "txt": ["identifier=00000000-0000-0000-0000-00000000000b", "authTag=0WCOl3kF", "ver=24", "minVer=8", "flags=0"],
+      "src_ips": ["192.168.177.179"],
+      "mac": "aa:bb:cc:00:00:35",
+      "src_macs": ["aa:bb:cc:00:00:35"],
+      "src_ifaces": ["eth0"],
+      "source_iface": "eth0",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T18:06:16.346009Z",
+      "raw_records": []
+    },
+    "service_key": "_remotepairing._tcp.local|00000000-0000-0000-0000-00000000000b",
+    "meta": {
+      "normalized": {},
+      "online": false,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "msa-sat-pi"
+  },
+  {
+    "service": {
+      "service_name": "_remotepairing._tcp.local",
+      "instance_name": "00000000-0000-0000-0000-00000000000d._remotepairing._tcp.local",
+      "hostname": "Iphone-v-B.local",
+      "addresses": ["192.168.177.174", "192.168.177.179"],
+      "port": 49152,
+      "txt": ["identifier=00000000-0000-0000-0000-00000000000d", "authTag=VLqOt+eQ", "ver=24", "minVer=8", "flags=0"],
+      "src_ips": ["192.168.177.174", "192.168.177.179"],
+      "mac": "aa:bb:cc:00:00:35",
+      "src_macs": ["aa:bb:cc:00:00:35", "aa:bb:cc:00:00:40"],
+      "src_ifaces": ["ens160"],
+      "source_iface": "ens160",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T17:06:03.797327Z",
+      "raw_records": []
+    },
+    "service_key": "_remotepairing._tcp.local|00000000-0000-0000-0000-00000000000d",
+    "meta": {
+      "normalized": {},
+      "online": false,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "mdns-sat-2"
+  },
+  {
+    "service": {
+      "service_name": "_remotepairing._tcp.local",
+      "instance_name": "00000000-0000-0000-0000-00000000000e._remotepairing._tcp.local",
+      "hostname": "Iphone-v-B.local",
+      "addresses": ["192.168.177.174"],
+      "port": 49152,
+      "txt": ["identifier=00000000-0000-0000-0000-00000000000e", "authTag=1u/Rvy7F", "ver=24", "minVer=8", "flags=0"],
+      "src_ips": ["192.168.177.174"],
+      "mac": "aa:bb:cc:00:00:40",
+      "src_macs": ["aa:bb:cc:00:00:40"],
+      "src_ifaces": ["ens160"],
+      "source_iface": "ens160",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T16:36:11.169114Z",
+      "raw_records": []
+    },
+    "service_key": "_remotepairing._tcp.local|00000000-0000-0000-0000-00000000000e",
+    "meta": {
+      "normalized": {},
+      "online": false,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "mdns-sat-2"
+  },
+  {
+    "service": {
+      "service_name": "_universal._sub._ipps._tcp.local",
+      "instance_name": "Drucker Mansao._ipps._tcp.local",
+      "hostname": "DruckerMansao.local",
+      "addresses": ["192.168.177.143"],
+      "port": 631,
+      "txt": [
+        "txtvers=1",
+        "adminurl=http://DruckerMansao.local./#hId-pgAirPrint",
+        "note=Home",
+        "priority=30",
+        "qtotal=1",
+        "TLS=1.2",
+        "rp=ipp/print",
+        "UUID=UUID-0028",
+        "product=(HP ENVY 6400 series)",
+        "ty=HP ENVY 6400 series",
+        "usb_MFG=HP",
+        "usb_MDL=ENVY 6400 series",
+        "Color=T",
+        "Duplex=T",
+        "pdl=application/vnd.hp-PCL,image/jpeg,image/urf,image/pwg-raster,application/PCLm",
+        "PaperMax=legal-A4",
+        "URF=CP1,MT1-2-8-9-10-11,PQ3-4-5,RS300-600,SRGB24,OB9,OFU0,W8-16,DEVW8-16,DEVRGB24-48,ADOBERGB24-48,DM3,IS1,V1.5,FN3",
+        "kind=document,envelope,photo,postcard",
+        "Scan=T",
+        "mopria-certified=2.0",
+        "Fax=F"
+      ],
+      "src_ips": ["192.168.177.143"],
+      "mac": "aa:bb:cc:00:00:1a",
+      "src_macs": ["aa:bb:cc:00:00:1a"],
+      "src_ifaces": ["ens160"],
+      "source_iface": "ens160",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T16:11:14.385425Z",
+      "raw_records": []
+    },
+    "service_key": "_universal._sub._ipps._tcp.local|Drucker Mansao._ipps._tcp.local",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "friendly_name": "HP ENVY 6400 series",
+          "vendor": "HP",
+          "model": "ENVY 6400 series"
+        }
+      },
+      "online": false,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "mdns-sat-2"
+  },
+  {
+    "service": {
+      "service_name": "_universal._sub._ipp._tcp.local",
+      "instance_name": "Drucker Mansao._ipp._tcp.local",
+      "hostname": "DruckerMansao.local",
+      "addresses": ["192.168.177.143"],
+      "port": 631,
+      "txt": [
+        "txtvers=1",
+        "adminurl=http://DruckerMansao.local./#hId-pgAirPrint",
+        "note=Home",
+        "priority=20",
+        "qtotal=1",
+        "TLS=1.2",
+        "rp=ipp/print",
+        "UUID=UUID-0028",
+        "product=(HP ENVY 6400 series)",
+        "ty=HP ENVY 6400 series",
+        "usb_MFG=HP",
+        "usb_MDL=ENVY 6400 series",
+        "Color=T",
+        "Duplex=T",
+        "pdl=application/vnd.hp-PCL,image/jpeg,image/urf,image/pwg-raster,application/PCLm",
+        "PaperMax=legal-A4",
+        "URF=CP1,MT1-2-8-9-10-11,PQ3-4-5,RS300-600,SRGB24,OB9,OFU0,W8-16,DEVW8-16,DEVRGB24-48,ADOBERGB24-48,DM3,IS1,V1.5,FN3",
+        "kind=document,envelope,photo,postcard",
+        "Scan=T",
+        "mopria-certified=2.0",
+        "Fax=F"
+      ],
+      "src_ips": ["192.168.177.143"],
+      "mac": "aa:bb:cc:00:00:1a",
+      "src_macs": ["aa:bb:cc:00:00:1a"],
+      "src_ifaces": ["ens160"],
+      "source_iface": "ens160",
+      "vlan_id": null,
+      "location": null,
+      "last_seen": "2025-12-10T16:11:14.385425Z",
+      "raw_records": []
+    },
+    "service_key": "_universal._sub._ipp._tcp.local|Drucker Mansao._ipp._tcp.local",
+    "meta": {
+      "normalized": {
+        "identity": {
+          "friendly_name": "HP ENVY 6400 series",
+          "vendor": "HP",
+          "model": "ENVY 6400 series"
+        }
+      },
+      "online": false,
+      "spoof_enabled": false,
+      "spoof_note": "",
+      "spoof_targets": []
+    },
+    "source_sat": "mdns-sat-2"
+  }
+]

@@ -1,0 +1,242 @@
+# ─────────────────────────────────────────────
+# Basis-Identität & Hub
+# ─────────────────────────────────────────────
+
+# Eindeutige ID dieses Satelliten (muss mit Hub-Config übereinstimmen)
+sat_id: "oe-msa-03"
+
+# Basis-URL des Hubs (ohne Slash am Ende)
+hub_url: "http://hub.example.local:8080"
+
+# Shared Secret für Authentifizierung am Hub (X-Satellite-Token)
+shared_secret: "supergeheim"
+
+# Steuert, ob entdeckte Services an den Hub veröffentlicht werden dürfen.
+# Default im Code: true
+publish_to_hub: true
+
+# Steuert, ob der Sat sich am Hub registriert, Hub-Config zieht und WS nutzt.
+# Default im Code: true
+hub_register_enabled: true
+
+# Lokaler Fallback für Interface-Konfigurationen, wenn keine Hub-Config verfügbar ist
+# oder der Sat im Local-only-Modus läuft.
+# Beispiel Monitor-/Local-Mode:
+# local_interfaces:
+#   - name: "ens160"
+#     mode: "scan"
+#   - name: "ens160.222"
+#     mode: "scan_and_advertise"
+local_interfaces: []
+
+# Optional: Hostname, der beim Register-Call an den Hub übergeben wird
+# (falls nicht gesetzt, kann auch None beim Hub ankommen)
+hostname: "oe-msa-03"
+
+# Optionale Software-Version, die beim Register-Call mitgeschickt wird
+# Default im Code: "0.2.0"
+software_version: "0.1"
+
+# Optionale HTTP Basic Auth fuer SAT-UI und lokale API.
+# Schuetzt eingehende LAN-Zugriffe, ersetzt aber kein TLS.
+ui_auth_enabled: false
+ui_auth_username: "admin"
+ui_auth_password: "CHANGEME"
+
+
+# ─────────────────────────────────────────────
+# Polling & VLAN-Handling (Hauptscript)
+# ─────────────────────────────────────────────
+
+# Wie oft der Sat seine Hub-Config neu zieht (Sekunden)
+# Default im Code: 300
+config_poll_interval: 10
+
+# Ob der Sat VLAN-Subinterfaces automatisch anlegt/auf räumt
+# (ens160.222 etc. gemäß Hub-Config). true = vollautomatisch.
+# Default im Code: true
+manage_vlan_interfaces: true
+
+# Optional: Management-Interface explizit fest verdrahten.
+# Wenn gesetzt, überschreibt auto_iface aus detect_primary_ip_and_iface().
+# Falls leer oder auskommentiert → automatische Erkennung.
+# mgmt_interface: "ens160"
+
+# Optional: Management-IP explizit setzen (mit Prefix, z.B. 192.168.177.50/24).
+# Wenn gesetzt, überschreibt auto_ip. Der Sat prüft dann via ip_mode=static,
+# ob diese IP schon gebunden ist und setzt sie ggf. selbst.
+# mgmt_ip_address: "192.168.177.50/24"
+
+
+# ─────────────────────────────────────────────
+# mDNS Discovery / Resolve (Worker)
+# ─────────────────────────────────────────────
+
+# Wie oft aktive PTR-Scans gesendet werden:
+#   - _services._dns-sd._udp.local
+#   - STATIC_SERVICE_SEEDS
+#   - dynamisch gelernte Typen
+# Default im Code: 10
+mdns_query_interval: 240
+
+# Wie oft Pending-Instanzen (PENDING_RESOLVE) aktiv per SRV/TXT/A
+# angefragt werden, um sie schneller zu „vervollständigen“.
+# Default im Code: 5
+mdns_resolve_interval: 10
+
+# Ob Resolve-Queries (SRV/TXT/A) bevorzugt per Unicast an die zuletzt
+# gesehene src_ip gesendet werden.
+# false = immer Multicast; true = wenn möglich Unicast.
+# Default im Code: false
+mdns_resolve_unicast: false
+
+# Services, die von der Discovery ausgeschlossen werden sollen.
+# Diese Services werden nicht an den Hub gemeldet und erscheinen
+# nicht in der UI. Nützlich für interne/paarungsbezogene Services,
+# die nicht über Netzwerkgrenzen hinweg gebridgt werden sollen.
+#
+# WICHTIGE ABGRENZUNG:
+# - `excluded_services` wirkt auf dem Sat vor dem Hub-Ingest.
+# - Ein hier ausgeschlossener Service taucht im Hub gar nicht erst auf.
+# - Die Hub-UI-Include-Defaults filtern spaeter nur bereits ingestierte
+#   Service-Typen in der Hub-Ansicht. Sie ersetzen diese Sat-Liste nicht.
+#
+# Empfohlene Services zum Ausschließen (häufig auftauchende, überflüssige Services):
+#   - _remotepairing._tcp.local (Apple Remote Pairing)
+#   - _companion-link._tcp.local (Apple Companion Link)
+#   - _sleep-proxy._udp.local (Apple Sleep Proxy)
+#   - _homekit._tcp.local (Apple HomeKit)
+#   - _workstation._tcp.local (Windows Workstation)
+#   - _afpovertcp._tcp.local (Apple Filing Protocol)
+#   - _adisk._tcp.local (Apple Time Machine)
+#   - _airport._tcp.local (Apple Airport)
+#   - _device-info._tcp.local (Geräteinformationen)
+#
+# Wenn diese Liste leer ist oder nicht gesetzt wird, werden keine Services ausgeschlossen.
+
+excluded_services:
+  - "_remotepairing._tcp.local"
+  - "_companion-link._tcp.local"
+  - "_sleep-proxy._udp.local"
+  - "_homekit._tcp.local"
+  - "_workstation._tcp.local"
+  - "_afpovertcp._tcp.local"
+  - "_adisk._tcp.local"
+  - "_airport._tcp.local"
+  - "_device-info._tcp.local"
+  - "_spotify-social-listening._tcp.local"
+  - "_asquic._udp.local"
+  
+
+# ─────────────────────────────────────────────
+# Spoofing / Announcements – TTLs & Strategie
+# ─────────────────────────────────────────────
+
+
+# Wie oft der Sat seine Poll Assignments per http abruft vom HUB (Sekunden)
+# Default im Code: 15
+spoof_poll_interval: 15
+
+
+# Fallback-TTL für Announcements, falls kein spezifischer TTL-Wert genutzt wird
+# Default: 120 Sekunden
+spoof_ttl: 120
+
+# TTL für Browser-PTR (_services._dns-sd._udp.local)
+# Default: 120 Sekunden
+spoof_ttl_ptr_browser: 600
+
+# TTL für Service-PTRs (_airplay._tcp.local → Instanz)
+# Default: 120 Sekunden
+spoof_ttl_ptr_service: 600
+
+# TTL für SRV-Records (Instanz → Host + Port)
+# Default: 3600 Sekunden
+spoof_ttl_srv: 3600
+
+# TTL für TXT-Records
+# Default: 3600 Sekunden
+spoof_ttl_txt: 3600
+
+# TTL für A-Records (Hostname → IPv4)
+# Default: 3600 Sekunden
+spoof_ttl_a: 3600
+
+
+# Wie viele Announce-Pakete beim ersten Auftauchen eines Services
+# in kurzer Folge gesendet werden (Burst).
+# Default: 3
+spoof_announce_burst_count: 5
+
+# Pause zwischen den Burst-Paketen (Sekunden).
+# Default: 0.1
+spoof_announce_burst_gap: 0.5
+
+# Nach wie vielen Sekunden ein „Refresh“-Announcement geschickt wird,
+# wenn sich der Service nicht geändert hat (Sekunden).
+# Default: 600
+spoof_announce_refresh_interval: 120
+
+
+# Anzahl der Goodbye-Pakete (TTL=0) pro Service,
+# die beim Entfernen eines Assignments oder beim Shutdown gesendet werden.
+# Höherer Wert = höhere Zuverlässigkeit, aber etwas mehr Traffic.
+spoof_goodbye_burst_count: 5
+
+# Pause (in Sekunden) zwischen den einzelnen Goodbye-Paketen im Burst.
+# Ein kleiner Gap verhindert Paketverluste bei kurzzeitiger Netzlast.
+spoof_goodbye_burst_gap: 0.5
+
+# ─────────────────────────────────────────────
+# WebSocket zum Hub
+# ─────────────────────────────────────────────
+
+# WS verwenden? (false = nur HTTP)
+hub_ws_enabled: true
+
+# Basis-WS-URL. Wenn nicht gesetzt, kann man aus hub_url ableiten
+# (http -> ws, https -> wss, + '/ws/sat').
+# hub_ws_url: "ws://192.168.177.98:8000/ws/sat"
+
+# Wie oft ein Reconnect versucht wird, wenn WS-Verbindung weg ist (Sekunden)
+hub_ws_reconnect_interval: 5
+
+# Wie oft der Sat seinen Status über WS sendet (Sekunden)
+hub_ws_status_interval: 20
+
+# Optional: Soll der Sat Services zusätzlich zum HTTP-Ingest auch per WS melden?
+hub_ws_send_services: true
+
+
+# Strategie für Unicast-mDNS-Antworten:
+# - "auto"         → Interface-Socket, außer wenn nur Link-Local/Dummy-IP → globales Socket
+# - "force_default"→ immer globales Socket (Default-Route)
+# - "iface_only"   → immer Interface-Socket (altes Verhalten)
+mdns_unicast_reply_mode: auto
+
+
+# mdns_subtype_aliases:
+#   Definiert zusätzliche Subtypen für bestehende Services.
+#   Manche Clients (z. B. iOS / AirPrint / Mopria) suchen nicht nur nach
+#   _ipp._tcp.local oder _ipps._tcp.local, sondern senden Queries an Subtypen
+#   wie _universal._sub._ipp._tcp.local oder _print._sub._ipp._tcp.local.
+#
+#   Damit der Spoofer auf diese alternativen Query-Namen korrekt antwortet,
+#   können hier Subtypen pro Basis-Service hinterlegt werden.
+#
+#   Beispiel:
+#     "_ipp._tcp.local":
+#       - "_universal._sub._ipp._tcp.local"
+#       - "_print._sub._ipp._tcp.local"
+#
+#   Der Spoofer behandelt dann alle aufgelisteten Subtypen so, als wären
+#   sie Anfragen für den Basis-Service selbst und erzeugt vollständige
+#   PTR/SRV/TXT/A-Antworten entsprechend des konfigurierten Druckers.
+
+mdns_subtype_aliases:
+  "_ipp._tcp.local":
+    - "_universal._sub._ipp._tcp.local"
+    - "_print._sub._ipp._tcp.local"
+  "_ipps._tcp.local":
+    - "_universal._sub._ipps._tcp.local"
+    - "_print._sub._ipps._tcp.local"
