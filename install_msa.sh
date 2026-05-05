@@ -19,6 +19,11 @@ APT_PACKAGES=(
   fping
 )
 
+APT_LOCK_TIMEOUT="${MSA_APT_LOCK_TIMEOUT:-120}"
+APT_CMD_TIMEOUT="${MSA_APT_CMD_TIMEOUT:-900}"
+APT_RETRIES="${MSA_APT_RETRIES:-2}"
+APT_RETRY_BACKOFF_SECONDS="${MSA_APT_RETRY_BACKOFF_SECONDS:-10}"
+
 # ── Zustand ────────────────────────────────────────────────────────────────
 INTERACTIVE=true
 ACTION=""
@@ -908,10 +913,89 @@ prepare_hub_config() {
 
 # ── System-Hilfen ────────────────────────────────────────────────────────
 
+apt_base_opts() {
+  printf "%s\n" \
+    "-o" "DPkg::Lock::Timeout=${APT_LOCK_TIMEOUT}" \
+    "-o" "Dpkg::Options::=--force-confdef" \
+    "-o" "Dpkg::Options::=--force-confold"
+}
+
+apt_with_retry() {
+  local label="$1"
+  shift
+
+  local attempt=1
+  local max_attempts="$APT_RETRIES"
+  local rc=0
+
+  while true; do
+    if timeout "${APT_CMD_TIMEOUT}s" "$@"; then
+      return 0
+    fi
+
+    rc=$?
+    if [[ $attempt -ge $max_attempts ]]; then
+      print_error "$label fehlgeschlagen nach ${attempt} Versuch(en)."
+      print_error "Wenn ein unterbrochener dpkg-Zustand vorliegt, pruefe manuell: dpkg --configure -a && apt-get -f install"
+      return "$rc"
+    fi
+
+    print_warn "$label fehlgeschlagen (Versuch ${attempt}/${max_attempts}, rc=$rc)."
+    if [[ "$rc" -eq 124 ]]; then
+      print_warn "Timeout nach ${APT_CMD_TIMEOUT}s (evtl. Lock oder blockierende Paketkonfiguration)."
+    fi
+
+    if ! apt_try_repair_noninteractive; then
+      print_warn "Automatischer Repair war nicht erfolgreich; erneuter Versuch folgt trotzdem."
+    fi
+
+    sleep "$APT_RETRY_BACKOFF_SECONDS"
+    attempt=$((attempt + 1))
+  done
+}
+
+apt_run_update() {
+  local apt_opts=()
+  mapfile -t apt_opts < <(apt_base_opts)
+
+  apt_with_retry \
+    "APT update" \
+    env DEBIAN_FRONTEND=noninteractive apt-get "${apt_opts[@]}" update
+}
+
+apt_run_install() {
+  local packages=("$@")
+  local apt_opts=()
+  mapfile -t apt_opts < <(apt_base_opts)
+
+  apt_with_retry \
+    "APT install" \
+    env DEBIAN_FRONTEND=noninteractive apt-get "${apt_opts[@]}" install -y "${packages[@]}"
+}
+
+apt_try_repair_noninteractive() {
+  local apt_opts=()
+  mapfile -t apt_opts < <(apt_base_opts)
+
+  print_info "Versuche automatische APT/DPKG-Reparatur (non-interactive)."
+
+  if ! timeout "${APT_CMD_TIMEOUT}s" env DEBIAN_FRONTEND=noninteractive dpkg --configure -a; then
+    print_warn "dpkg --configure -a fehlgeschlagen."
+    return 1
+  fi
+
+  if ! timeout "${APT_CMD_TIMEOUT}s" env DEBIAN_FRONTEND=noninteractive apt-get "${apt_opts[@]}" -f install -y; then
+    print_warn "apt-get -f install fehlgeschlagen."
+    return 1
+  fi
+
+  return 0
+}
+
 ensure_base_packages() {
   print_section "Systempakete"
-  run_step "APT Paketindex aktualisieren" apt update || return 1
-  run_step "Grundpakete installieren" apt install -y "${APT_PACKAGES[@]}" || return 1
+  run_step "APT Paketindex aktualisieren" apt_run_update || return 1
+  run_step "Grundpakete installieren" apt_run_install "${APT_PACKAGES[@]}" || return 1
 }
 
 ensure_venv() {
@@ -1063,8 +1147,8 @@ preflight_common() {
   print_section "Preflight"
   run_step "Root-Rechte pruefen" require_root || return 1
   run_step "Arbeitsverzeichnis pruefen" require_dir "$BASE_DIR" || return 1
-  run_step "APT Verfuegbarkeit pruefen" require_command apt || return 1
-  run_step "sed Verfuegbarkeit pruefen" require_command sed || return 1
+  run_step "APT Verfuegbarkeit pruefen" require_command apt-get || return 1
+  run_step "timeout Verfuegbarkeit pruefen" require_command timeout || return 1
 }
 
 preflight_sat_install() {
