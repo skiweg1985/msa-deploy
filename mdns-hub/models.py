@@ -48,6 +48,7 @@ class SatRegisterRequest(BaseModel):
     mgmt_ip_address: Optional[str] = None
     mgmt_ip_mode: Optional[str] = None
     software_version: Optional[str] = None
+    physical_interfaces: Optional[List[str]] = None
 
 
 class SatInterface(BaseModel):
@@ -245,6 +246,8 @@ class SatMeta(BaseModel):
     mgmt_ip_mode: Optional[str] = None
 
     client_ip: Optional[str] = None
+
+    physical_interfaces: Optional[List[str]] = None
 
     # nur registrierungszeitpunkt persistent
     last_register: Optional[datetime] = None

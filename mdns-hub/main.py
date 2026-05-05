@@ -989,16 +989,19 @@ def register_sat(
     client_ip = request.client.host
     now = datetime.now(timezone.utc)
 
-    meta = update_sat_meta(
-        sat_id,
-        hostname=req.hostname,
-        software_version=req.software_version,
-        mgmt_interface=req.mgmt_interface or "eth0",
-        mgmt_ip_address=req.mgmt_ip_address,
-        mgmt_ip_mode=req.mgmt_ip_mode,
-        last_register=now,
-        client_ip=client_ip,
-    )
+    meta_fields: Dict[str, Any] = {
+        "hostname": req.hostname,
+        "software_version": req.software_version,
+        "mgmt_interface": req.mgmt_interface or "eth0",
+        "mgmt_ip_address": req.mgmt_ip_address,
+        "mgmt_ip_mode": req.mgmt_ip_mode,
+        "last_register": now,
+        "client_ip": client_ip,
+    }
+    if req.physical_interfaces is not None:
+        meta_fields["physical_interfaces"] = req.physical_interfaces
+
+    meta = update_sat_meta(sat_id, **meta_fields)
 
     cfg = get_default_config_for_sat(sat_id)
 
@@ -1069,12 +1072,20 @@ def api_sat_interfaces():
         if isinstance(meta, SatMeta):
             hostname = meta.hostname
             mgmt_if = meta.mgmt_interface
+            physical_ifs = meta.physical_interfaces
         elif isinstance(meta, dict):
             hostname = meta.get("hostname")
             mgmt_if = meta.get("mgmt_interface")
+            physical_ifs = meta.get("physical_interfaces")
         else:
             hostname = None
             mgmt_if = None
+            physical_ifs = None
+
+        if isinstance(physical_ifs, list):
+            physical_out = [str(x) for x in physical_ifs if x is not None and str(x).strip()]
+        else:
+            physical_out = []
 
         ifaces = []
         for iface in cfg.interfaces:
@@ -1097,6 +1108,7 @@ def api_sat_interfaces():
             "sat_id": sat_id,
             "hostname": hostname,
             "mgmt_interface": mgmt_if,
+            "physical_interfaces": physical_out,
             "interfaces": ifaces,
             "ws_connected": ws_connected,
             "last_ws_hello": last_ws_hello,

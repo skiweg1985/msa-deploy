@@ -3,6 +3,7 @@
     "sat_id": "mdns-sat-2",
     "hostname": "mdns-sat-2",
     "mgmt_interface": "ens160",
+    "physical_interfaces": ["ens160"],
     "interfaces": [
       {
         "name": "ens160",
@@ -20,6 +21,7 @@
     "sat_id": "mdns-sat-guest",
     "hostname": null,
     "mgmt_interface": null,
+    "physical_interfaces": ["ens160"],
     "interfaces": [
       {
         "name": "ens160",
@@ -37,6 +39,7 @@
     "sat_id": "msa-sat-pi",
     "hostname": "msa-sat-pi",
     "mgmt_interface": "eth0",
+    "physical_interfaces": ["eth0"],
     "interfaces": [
       {
         "name": "eth0",

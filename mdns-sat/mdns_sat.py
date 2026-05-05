@@ -361,6 +361,18 @@ def _get_ipv4_addresses_for_iface(iface: str) -> List[str]:
     return addrs
 
 
+def _generate_link_local_for_vlan(vlan_id: int) -> str:
+    """
+    Deterministische Link-Local-Adresse aus VLAN-ID (169.254.0.0/16).
+
+    Beispiele: VLAN 1 -> 169.254.0.2/16, VLAN 222 -> 169.254.0.223/16,
+    VLAN 300 -> 169.254.1.47/16, VLAN 4094 -> 169.254.16.31/16
+    """
+    octet3 = vlan_id // 254
+    octet4 = (vlan_id % 254) + 1
+    return f"169.254.{octet3}.{octet4}/16"
+
+
 def ensure_ipv4_for_iface(iface: str, ip_mode: Optional[str], ip_address: Optional[str]) -> None:
     """
     Stellt sicher, dass das Interface eine passende IPv4-Adresse hat,
@@ -416,8 +428,9 @@ def ensure_ipv4_for_iface(iface: str, ip_mode: Optional[str], ip_address: Option
 
 def ensure_vlan_subinterface(iface_cfg: Dict[str, Any]) -> None:
     """
-    Stellt sicher, dass ein VLAN-Subinterface existiert, UP ist
-    und bei static-Config eine IP-Adresse gesetzt hat.
+    Stellt sicher, dass ein VLAN-Subinterface existiert, UP ist,
+    bei static-Config eine IP-Adresse gesetzt hat und sonst bei fehlender
+    IPv4 eine deterministische Link-Local-Adresse erhält (mDNS-Stack).
     """
     parsed = parse_vlan_iface(iface_cfg)
     if not parsed:
@@ -475,8 +488,27 @@ def ensure_vlan_subinterface(iface_cfg: Dict[str, Any]) -> None:
 
     # IP-Konfiguration prüfen/setzen
     ensure_ipv4_for_iface(name, iface_cfg.get("ip_mode"), iface_cfg.get("ip_address"))
-    
-   
+
+    current = _get_ipv4_addresses_for_iface(name)
+    if not current:
+        ll_addr = _generate_link_local_for_vlan(vlan_id)
+        logger.info(
+            "[VLAN] Interface '%s' hat keine IPv4 – vergebe Link-Local %s",
+            name,
+            ll_addr,
+        )
+        try:
+            subprocess.check_call(
+                ["ip", "addr", "add", ll_addr, "dev", name],
+                stderr=subprocess.DEVNULL,
+            )
+        except subprocess.CalledProcessError as e:
+            logger.error(
+                "[VLAN] Fehler beim Setzen der Link-Local-IP auf '%s': %s",
+                name,
+                e,
+            )
+
 
 def cleanup_vlan_subinterfaces(interfaces_cfg: List[Dict[str, Any]]) -> None:
     """
@@ -639,6 +671,45 @@ def detect_primary_ip_and_iface(hub_url: str):
     }
 
 
+def detect_physical_interfaces() -> List[str]:
+    """
+    Best-effort Liste physischer NIC-Namen via `ip -o link`.
+    VLAN-Subs und typische virtuelle Ports werden ausgeschlossen.
+    """
+    try:
+        out = subprocess.check_output(
+            ["ip", "-o", "link", "show"],
+            stderr=subprocess.DEVNULL,
+        ).decode("utf-8", errors="ignore")
+    except Exception as e:
+        logger.warning("[IFLIST] Konnte Interface-Liste nicht ermitteln: %s", e)
+        return []
+
+    names: List[str] = []
+    seen = set()
+    for line in out.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split(":", 2)
+        if len(parts) < 2:
+            continue
+        raw_name = parts[1].strip()
+        base = raw_name.split("@", 1)[0].strip()
+        if not base or base == "lo":
+            continue
+        if "." in base:
+            continue
+        if base.startswith(("veth", "docker", "br-")):
+            continue
+        if base not in seen:
+            seen.add(base)
+            names.append(base)
+
+    names.sort()
+    return names
+
+
 def register_sat(cfg: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     global HUB_STATUS
     if not is_hub_registration_enabled(cfg):
@@ -668,6 +739,12 @@ def register_sat(cfg: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     mgmt_ip_mode = detect_ip_mode_for_iface(mgmt_iface)
     cfg["auto_ip_mode"] = mgmt_ip_mode
 
+    physical_ifaces = detect_physical_interfaces()
+    if mgmt_iface and str(mgmt_iface).strip():
+        m = str(mgmt_iface).strip()
+        if m not in physical_ifaces:
+            physical_ifaces = sorted(set(physical_ifaces + [m]))
+
     payload = {
         "satellite_id": sat_id,
         "hostname": cfg.get("hostname"),
@@ -676,6 +753,7 @@ def register_sat(cfg: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         "mgmt_ip_address": mgmt_ip,
         "mgmt_ip_mode": mgmt_ip_mode,
         "software_version": cfg.get("software_version", "0.2.0"),
+        "physical_interfaces": physical_ifaces,
     }
 
     logger.info(

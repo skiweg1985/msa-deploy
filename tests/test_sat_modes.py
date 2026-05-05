@@ -188,3 +188,10 @@ def test_api_health_reports_local_only_as_ok():
     assert payload["publish_to_hub"] is False
     assert payload["hub_register_enabled"] is False
     assert payload["interface_config_source"] == "local"
+
+
+def test_generate_link_local_for_vlan_deterministic():
+    assert mdns_sat._generate_link_local_for_vlan(1) == "169.254.0.2/16"
+    assert mdns_sat._generate_link_local_for_vlan(222) == "169.254.0.223/16"
+    assert mdns_sat._generate_link_local_for_vlan(300) == "169.254.1.47/16"
+    assert mdns_sat._generate_link_local_for_vlan(4094) == "169.254.16.31/16"
