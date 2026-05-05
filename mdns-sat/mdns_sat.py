@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import secrets
 import logging
 import socket
 import struct
@@ -12,7 +13,8 @@ from typing import Any, Dict, List, Optional
 import requests
 import uvicorn
 import yaml
-from fastapi import FastAPI, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, status
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse
 
@@ -40,7 +42,10 @@ from mdns_mode import (
     get_mode_label,
     is_hub_registration_enabled,
     is_publish_to_hub_enabled,
+    is_ui_auth_enabled,
     is_ws_enabled,
+    get_ui_auth_password,
+    get_ui_auth_username,
     resolve_interface_configs,
     validate_sat_config,
 )
@@ -82,6 +87,7 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("mdns-sat")
+security = HTTPBasic(auto_error=False)
 
 
 # ─────────────────────────────────────────────
@@ -142,8 +148,32 @@ app.add_middleware(
 )
 
 
+def require_ui_auth(
+    credentials: Optional[HTTPBasicCredentials] = Depends(security),
+) -> bool:
+    if not is_ui_auth_enabled(SAT_CONFIG):
+        return True
+
+    expected_username = get_ui_auth_username(SAT_CONFIG)
+    expected_password = get_ui_auth_password(SAT_CONFIG)
+    provided_username = credentials.username if credentials else ""
+    provided_password = credentials.password if credentials else ""
+
+    if (
+        secrets.compare_digest(provided_username, expected_username)
+        and secrets.compare_digest(provided_password, expected_password)
+    ):
+        return True
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Unauthorized",
+        headers={"WWW-Authenticate": "Basic"},
+    )
+
+
 @app.get("/debug/service-types")
-def api_service_types():
+def api_service_types(_auth_ok: bool = Depends(require_ui_auth)):
     """
     Debug-Endpoint: zeigt alle aktuell gelernten Service-Typen.
     """
@@ -155,7 +185,7 @@ def api_service_types():
     }
 
 @app.get("/debug/ws-assignments")
-def api_debug_ws_assignments():
+def api_debug_ws_assignments(_auth_ok: bool = Depends(require_ui_auth)):
     """
     Zeigt, welche Assignments zuletzt über WebSocket empfangen wurden.
     Falls noch keine WS-Daten angekommen sind → None.
@@ -167,7 +197,7 @@ def api_debug_ws_assignments():
     }
 
 @app.get("/health")
-def api_health():
+def api_health(_auth_ok: bool = Depends(require_ui_auth)):
     # Basis: Prozess lebt
     base_status = "ok"
     register_enabled = is_hub_registration_enabled(SAT_CONFIG)
@@ -202,15 +232,17 @@ def api_health():
 
 
 @app.get("/config/local")
-def api_config_local():
+def api_config_local(_auth_ok: bool = Depends(require_ui_auth)):
     cfg = dict(SAT_CONFIG)
     cfg.pop("shared_secret", None)
+    cfg.pop("ui_auth_password", None)
     return cfg
 
 
 @app.get("/services")
 def api_services(
     type: Optional[str] = Query(None, alias="type"),
+    _auth_ok: bool = Depends(require_ui_auth),
 ):
     """
     Liefert eine Liste der bekannten Service-Instanzen.
@@ -252,7 +284,7 @@ def api_services(
 
 @app.get("/", response_class=HTMLResponse)
 @app.get("/ui", response_class=HTMLResponse)
-def ui_root():
+def ui_root(_auth_ok: bool = Depends(require_ui_auth)):
     ui_path = BASE_DIR / "ui.html"
     if ui_path.exists():
         return FileResponse(str(ui_path))

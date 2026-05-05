@@ -6,6 +6,9 @@ from typing import Any, Dict, List
 CONFIG_DEFAULTS: Dict[str, Any] = {
     "publish_to_hub": True,
     "hub_register_enabled": True,
+    "ui_auth_enabled": False,
+    "ui_auth_username": "admin",
+    "ui_auth_password": "",
 }
 
 
@@ -22,6 +25,18 @@ def is_publish_to_hub_enabled(cfg: Dict[str, Any]) -> bool:
 
 def is_hub_registration_enabled(cfg: Dict[str, Any]) -> bool:
     return bool(cfg.get("hub_register_enabled", True))
+
+
+def is_ui_auth_enabled(cfg: Dict[str, Any]) -> bool:
+    return bool(cfg.get("ui_auth_enabled", False))
+
+
+def get_ui_auth_username(cfg: Dict[str, Any]) -> str:
+    return str(cfg.get("ui_auth_username", "admin") or "").strip()
+
+
+def get_ui_auth_password(cfg: Dict[str, Any]) -> str:
+    return str(cfg.get("ui_auth_password", "") or "")
 
 
 def is_monitor_only_mode(cfg: Dict[str, Any]) -> bool:
@@ -65,6 +80,16 @@ def is_ws_enabled(cfg: Dict[str, Any]) -> bool:
 def validate_sat_config(cfg: Dict[str, Any]) -> None:
     if not cfg.get("sat_id"):
         raise ValueError("Fehlender Pflichtparameter in config: sat_id")
+
+    if is_ui_auth_enabled(cfg):
+        if not get_ui_auth_username(cfg):
+            raise ValueError(
+                "Ungültige Konfiguration: ui_auth_enabled=true erfordert ui_auth_username."
+            )
+        if not get_ui_auth_password(cfg):
+            raise ValueError(
+                "Ungültige Konfiguration: ui_auth_enabled=true erfordert ui_auth_password."
+            )
 
     publish_enabled = is_publish_to_hub_enabled(cfg)
     register_enabled = is_hub_registration_enabled(cfg)

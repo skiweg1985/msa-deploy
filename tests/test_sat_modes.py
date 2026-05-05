@@ -37,6 +37,9 @@ def test_load_config_applies_mode_defaults(tmp_path: Path):
 
     assert cfg["publish_to_hub"] is True
     assert cfg["hub_register_enabled"] is True
+    assert cfg["ui_auth_enabled"] is False
+    assert cfg["ui_auth_username"] == "admin"
+    assert cfg["ui_auth_password"] == ""
 
 
 def test_load_config_rejects_publish_without_register(tmp_path: Path):
@@ -69,6 +72,21 @@ def test_load_config_allows_local_only_without_hub_credentials(tmp_path: Path):
     assert cfg["hub_register_enabled"] is False
     assert cfg["publish_to_hub"] is False
     assert mdns_mode.resolve_interface_configs(cfg) == [{"name": "eth0", "mode": "scan"}]
+
+
+def test_load_config_rejects_enabled_ui_auth_without_password(tmp_path: Path):
+    cfg_file = tmp_path / "sat_config.yaml"
+    cfg_file.write_text(
+        'sat_id: "sat-a"\n'
+        'hub_url: "http://hub.local"\n'
+        'shared_secret: "secret"\n'
+        'ui_auth_enabled: true\n'
+        'ui_auth_username: "admin"\n',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit):
+        mdns_sat.load_config(cfg_file)
 
 
 def test_push_services_to_hub_is_skipped_when_publish_is_disabled(monkeypatch: pytest.MonkeyPatch):

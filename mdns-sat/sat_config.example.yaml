@@ -37,6 +37,12 @@ hostname: "oe-msa-03"
 # Default im Code: "0.2.0"
 software_version: "0.1"
 
+# Optionale HTTP Basic Auth fuer SAT-UI und lokale API.
+# Schuetzt eingehende LAN-Zugriffe, ersetzt aber kein TLS.
+ui_auth_enabled: false
+ui_auth_username: "admin"
+ui_auth_password: "CHANGEME"
+
 
 # ─────────────────────────────────────────────
 # Polling & VLAN-Handling (Hauptscript)

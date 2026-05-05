@@ -796,8 +796,34 @@ configure_sat_bootstrap_values() {
 configure_sat_security_values() {
   local target="$1"
   local shared_secret=""
+  local ui_auth_enabled="false"
+  local ui_auth_username="admin"
+  local ui_auth_password=""
 
   print_section "SAT Security"
+
+  if ask_yes_no "[SAT] Frontend-Authentifizierung aktivieren?" "n"; then
+    ui_auth_enabled="true"
+    ask_input "[SAT] UI-Benutzername" "admin" ui_auth_username
+    ask_secret_required "[SAT] UI-Passwort" ui_auth_password
+  fi
+
+  run_step "ui_auth_enabled in sat_config.yaml setzen" set_yaml_value "$target" "ui_auth_enabled" "$ui_auth_enabled" || return 1
+
+  if [[ "$ui_auth_enabled" == "true" && -z "$ui_auth_password" ]]; then
+    add_warning "SAT UI-Auth wurde ohne Passwort angefordert. Setze ui_auth_enabled=false (sicherer Default)."
+    ui_auth_enabled="false"
+    run_step "ui_auth_enabled in sat_config.yaml auf false setzen" set_yaml_value "$target" "ui_auth_enabled" "false" || return 1
+  fi
+
+  if [[ "$ui_auth_enabled" == "true" ]]; then
+    run_step "ui_auth_username in sat_config.yaml setzen" set_yaml_value "$target" "ui_auth_username" "$ui_auth_username" || return 1
+    run_step "ui_auth_password in sat_config.yaml setzen" set_yaml_value "$target" "ui_auth_password" "$ui_auth_password" || return 1
+    add_summary "SAT UI-Auth aktiviert: $target (ui_auth_username=$ui_auth_username)"
+  else
+    add_summary "SAT UI-Auth deaktiviert: $target"
+  fi
+
   ask_secret_required "[SAT] Shared Secret fuer Hub-Kommunikation" shared_secret
 
   if [[ -n "$shared_secret" ]]; then
