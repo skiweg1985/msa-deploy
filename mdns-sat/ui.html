@@ -1,717 +1,127 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8" />
-    <title>mDNS Sat – Services</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Tailwind via CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MSA SAT Admin</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 16px; background:#0b1220; color:#e5e7eb; }
+    h1,h2 { margin: 0 0 10px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+    .card { background:#111827; border:1px solid #374151; border-radius:10px; padding:12px; flex:1; min-width:280px; }
+    button { background:#2563eb; color:#fff; border:none; border-radius:8px; padding:8px 12px; cursor:pointer; }
+    button.secondary { background:#374151; }
+    textarea,input { width:100%; background:#0f172a; color:#e5e7eb; border:1px solid #374151; border-radius:6px; padding:6px; }
+    pre { background:#0f172a; border:1px solid #374151; border-radius:8px; padding:8px; overflow:auto; max-height:320px; }
+    .muted { color:#9ca3af; font-size:12px; }
+    .ok { color:#34d399; }
+    .err { color:#f87171; }
+  </style>
 </head>
-<body class="bg-slate-100 text-slate-900">
-<div class="min-h-screen flex items-start justify-center py-8 px-2 sm:px-4">
-    <div class="w-full max-w-6xl bg-white shadow-lg rounded-2xl p-4 sm:p-6">
-        <!-- Header -->
-        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
-            <div class="flex-1">
-                <h1 class="text-xl sm:text-2xl font-semibold text-slate-900">
-                    mDNS Sat – Services
-                </h1>
-                <p class="text-xs sm:text-sm text-slate-500 mt-1">
-                    Erfasste mDNS-/Bonjour-Dienste dieses Satelliten. Filterbar nach Service-Typ, Freitext und Host/IP.
-                </p>
+<body>
+  <h1>MSA - mDNS Service Atlas / SAT Admin</h1>
+  <div class="row">
+    <button onclick="reloadAll()">Reload All</button>
+    <button class="secondary" onclick="restartWorkers()">mDNS Worker neu starten</button>
+    <span id="status" class="muted">Bereit.</span>
+  </div>
 
-                <!-- Health / Sat-Info -->
-                <div class="mt-2 space-y-1 text-[0.7rem] sm:text-xs">
-                    <div class="flex flex-wrap gap-2">
-                        <span
-                            id="healthStatusPill"
-                            class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-slate-600"
-                        >
-                            <span class="inline-block h-2 w-2 rounded-full bg-slate-300"></span>
-                            Status: unbekannt
-                        </span>
-                        <span
-                            id="healthSatId"
-                            class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-slate-600 max-w-xs truncate"
-                        >
-                            Sat ID: –
-                        </span>
-                        <span
-                            id="healthMode"
-                            class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-slate-600 max-w-xs truncate"
-                        >
-                            Modus: –
-                        </span>
-                    </div>
+  <div class="row">
+    <div class="card"><h2>Overview</h2><pre id="overview">lädt…</pre></div>
+    <div class="card"><h2>Spoofing</h2><pre id="spoofing">lädt…</pre></div>
+  </div>
 
-                    <!-- Hub-Details in separater Box -->
-                    <div
-                        id="healthDetails"
-                        class="inline-flex flex-col rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600 max-w-full"
-                    >
-                        <span id="healthHubLine" class="truncate">
-                            Hub-Status: unbekannt
-                        </span>
-                        <span id="healthPublishLine" class="truncate text-slate-500">
-                            Hub-Service-Publish: –
-                        </span>
-                        <span id="healthRegisterLine" class="truncate text-slate-500">
-                            Hub-Registrierung: –
-                        </span>
-                        <span id="healthHubUrl" class="truncate text-slate-500">
-                            Hub: –
-                        </span>
-                        <span id="healthLastOk" class="truncate text-slate-500">
-                            Letzte erfolgreiche Verbindung: –
-                        </span>
-                        <span id="healthErrorLine" class="truncate text-amber-700 hidden">
-                            Letzter Fehler: –
-                        </span>
-                        <span id="healthTime" class="truncate text-slate-500">
-                            Letzter Heartbeat (Sat): –
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex items-start gap-2">
-                <button
-                    id="reloadBtn"
-                    class="inline-flex items-center gap-1 rounded-lg bg-blue-600 text-white text-xs sm:text-sm px-3 py-1.5 font-medium shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-white"
-                >
-                    <span>Reload</span>
-                </button>
-                <button
-                    id="resetFiltersBtn"
-                    class="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white text-xs sm:text-sm px-3 py-1.5 font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-white"
-                >
-                    <span>Filter zurücksetzen</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Filterzeile -->
-        <div class="flex flex-col sm:flex-row gap-3 mb-4">
-            <div class="flex-1 sm:max-w-xs">
-                <label class="block text-xs font-medium text-slate-600 mb-1">
-                    Service-Typ
-                </label>
-                <select
-                    id="serviceTypeSelect"
-                    class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-                >
-                    <option value="">(alle)</option>
-                </select>
-            </div>
-
-            <div class="flex-1">
-                <label class="block text-xs font-medium text-slate-600 mb-1">
-                    Suche
-                </label>
-                <input
-                    id="searchInput"
-                    type="text"
-                    placeholder="Instance, Host oder IP"
-                    class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-                />
-            </div>
-
-            <div class="flex items-end">
-                <p id="serviceCount" class="text-xs sm:text-sm text-slate-500">
-                    &nbsp;
-                </p>
-            </div>
-        </div>
-
-        <!-- Tabelle -->
-        <div class="border border-slate-200 rounded-xl overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-left text-xs sm:text-sm">
-                    <thead class="bg-slate-50 border-b border-slate-200">
-                    <tr>
-                        <th class="px-3 py-2 font-semibold text-slate-500 whitespace-nowrap">Instance</th>
-                        <th class="px-3 py-2 font-semibold text-slate-500 whitespace-nowrap">Service</th>
-                        <th class="px-3 py-2 font-semibold text-slate-500 whitespace-nowrap">Host / IPs</th>
-                        <th class="px-3 py-2 font-semibold text-slate-500 text-right whitespace-nowrap">Port</th>
-                        <th class="px-3 py-2 font-semibold text-slate-500 whitespace-nowrap">Last Seen</th>
-                        <th class="px-3 py-2 font-semibold text-slate-500 text-center whitespace-nowrap" title="Wird an Hub gemeldet">
-                            Hub
-                        </th>
-                        <th class="px-3 py-2 font-semibold text-slate-500 text-right whitespace-nowrap">
-                            Details
-                        </th>
-                    </tr>
-                    </thead>
-                    <tbody id="serviceTableBody" class="divide-y divide-slate-100 bg-white">
-                    <!-- Rows werden per JS gefüllt -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  <div class="row">
+    <div class="card"><h2>Metrics</h2><pre id="metrics">lädt…</pre></div>
+    <div class="card">
+      <h2>Settings</h2>
+      <div class="muted">Editierbar (JSON):</div>
+      <textarea id="settingsEditable" rows="12"></textarea>
+      <div class="muted" style="margin-top:8px">Read-only:</div>
+      <pre id="settingsReadonly">-</pre>
+      <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+        <label><input type="checkbox" id="applyNow" /> apply now (restart workers)</label>
+      </div>
+      <div style="margin-top:8px; display:flex; gap:8px;">
+        <button onclick="saveSettings()">Settings speichern</button>
+        <button class="secondary" onclick="loadSettings()">Neu laden</button>
+      </div>
     </div>
-</div>
+  </div>
 
-<!-- Detail-Modal -->
-<div
-    id="detailOverlay"
-    class="fixed inset-0 z-40 hidden bg-black/40 backdrop-blur-sm"
->
-    <div class="flex min-h-screen items-center justify-center p-3 sm:p-4">
-        <div
-            class="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-slate-200"
-        >
-            <!-- Modal Header -->
-            <div class="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-slate-200">
-                <h2 id="detailTitle" class="text-base sm:text-lg font-semibold text-slate-900 truncate">
-                    Details
-                </h2>
-                <button
-                    onclick="closeDetail()"
-                    class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1"
-                >
-                    ✕
-                </button>
-            </div>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const setStatus = (msg, ok=true) => {
+      const el = $("status");
+      el.textContent = msg;
+      el.className = ok ? "ok" : "err";
+    };
 
-            <!-- Modal Body -->
-            <div class="px-4 sm:px-6 py-4 space-y-4 text-xs sm:text-sm">
-                <!-- Basisinfos -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <h3 class="text-[0.7rem] uppercase tracking-wide text-slate-500 font-semibold mb-1">
-                            Instance
-                        </h3>
-                        <p id="detailInstance" class="font-mono text-slate-900 break-all"></p>
-                    </div>
-                    <div>
-                        <h3 class="text-[0.7rem] uppercase tracking-wide text-slate-500 font-semibold mb-1">
-                            Service
-                        </h3>
-                        <p id="detailService" class="font-mono text-slate-900 break-all"></p>
-                    </div>
-                    <div>
-                        <h3 class="text-[0.7rem] uppercase tracking-wide text-slate-500 font-semibold mb-1">
-                            Hostname
-                        </h3>
-                        <p id="detailHostname" class="font-mono text-slate-900 break-all">–</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <h3 class="text-[0.7rem] uppercase tracking-wide text-slate-500 font-semibold mb-1">
-                                Port
-                            </h3>
-                            <p id="detailPort" class="font-mono text-slate-900">–</p>
-                        </div>
-                        <div>
-                            <h3 class="text-[0.7rem] uppercase tracking-wide text-slate-500 font-semibold mb-1">
-                                Last Seen
-                            </h3>
-                            <p id="detailLastSeen" class="font-mono text-slate-900">–</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- IPs -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <h3 class="text-[0.7rem] uppercase tracking-wide text-slate-500 font-semibold mb-1">
-                            IPs
-                        </h3>
-                        <p id="detailIPs" class="font-mono text-slate-900 break-all">–</p>
-                    </div>
-                    <div>
-                        <h3 class="text-[0.7rem] uppercase tracking-wide text-slate-500 font-semibold mb-1">
-                            src IPs
-                        </h3>
-                        <p id="detailSrcIPs" class="font-mono text-slate-900 break-all">–</p>
-                    </div>
-                </div>
-
-                <!-- TXT Records -->
-                <div>
-                    <h3 class="text-[0.7rem] uppercase tracking-wide text-slate-500 font-semibold mb-1">
-                        TXT Records
-                    </h3>
-                    <div
-                        id="detailTxt"
-                        class="text-[0.7rem] sm:text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 whitespace-pre-wrap break-words text-slate-800"
-                    >
-                        Keine TXT-Records.
-                    </div>
-                </div>
-
-                <!-- Rohdaten -->
-                <div>
-                    <h3 class="text-[0.7rem] uppercase tracking-wide text-slate-500 font-semibold mb-1">
-                        Rohdaten (Service-Objekt)
-                    </h3>
-                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-2 sm:p-3">
-                        <pre
-                            id="detailRaw"
-                            class="text-[0.65rem] sm:text-xs font-mono text-slate-800 overflow-x-auto"
-                        ></pre>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="px-4 sm:px-6 py-3 border-t border-slate-200 flex justify-end">
-                <button
-                    onclick="closeDetail()"
-                    class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1"
-                >
-                    Schließen
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    let allServices = [];
-
-    const FILTER_STORAGE_KEY = "mdnsSatFilters";
-
-    function shorten(text, maxLen = 40) {
-        if (!text) return "–";
-        if (text.length <= maxLen) return text;
-        return text.slice(0, maxLen - 1) + "…";
+    async function getJSON(url, opts={}) {
+      const r = await fetch(url, opts);
+      if (!r.ok) throw new Error(`${url}: ${r.status}`);
+      return await r.json();
     }
 
-    // ---- Zeit-Helfer: ISO-String -> Date -> lokales Format ----
-
-    function isoToDate(value) {
-        if (!value) return null;
-
-        if (typeof value === "string") {
-            let s = value.trim();
-            // optional: wenn im JSON schon das „normale“ Format steht, einfach versuchen
-            let d = new Date(s);
-            if (!isNaN(d.getTime())) return d;
-
-            // ISO ohne Zeitzone + Mikrosekunden: 2025-11-16T13:15:08.512706
-            if (s.includes(".")) {
-                s = s.split(".")[0]; // Mikrosekunden kappen
-            }
-            if (!s.endsWith("Z")) {
-                s = s + "Z"; // als UTC interpretieren
-            }
-            d = new Date(s);
-            return isNaN(d.getTime()) ? null : d;
-        }
-
-        if (typeof value === "object" && value.time) {
-            return isoToDate(value.time);
-        }
-
-        return null;
+    async function loadOverview() {
+      const d = await getJSON('/admin/overview');
+      $('overview').textContent = JSON.stringify(d, null, 2);
     }
 
-    function formatLocalDateTime(value) {
-        const d = isoToDate(value);
-        if (!d) return "–";
+    async function loadSpoofing() {
+      const d = await getJSON('/admin/spoofing');
+      $('spoofing').textContent = JSON.stringify(d, null, 2);
+    }
 
-        // 16.11.2025 13:45:08 (de-DE lokal)
-        return d.toLocaleString("de-DE", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
+    async function loadMetrics() {
+      const d = await getJSON('/admin/metrics');
+      $('metrics').textContent = JSON.stringify(d, null, 2);
+    }
+
+    async function loadSettings() {
+      const d = await getJSON('/admin/settings');
+      $('settingsEditable').value = JSON.stringify(d.editable || {}, null, 2);
+      $('settingsReadonly').textContent = JSON.stringify(d.readonly || {}, null, 2);
+    }
+
+    async function saveSettings() {
+      try {
+        const editable = JSON.parse($('settingsEditable').value || '{}');
+        const applyNow = $('applyNow').checked;
+        const d = await getJSON('/admin/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ settings: editable, apply_now: applyNow })
         });
+        $('settingsEditable').value = JSON.stringify(d.settings?.editable || editable, null, 2);
+        $('settingsReadonly').textContent = JSON.stringify(d.settings?.readonly || {}, null, 2);
+        setStatus('Settings gespeichert.', true);
+      } catch (e) {
+        setStatus(`Save fehlgeschlagen: ${e.message}`, false);
+      }
     }
 
-    function parseTime(value) {
-        const d = isoToDate(value);
-        return d ? d.getTime() : 0;
+    async function restartWorkers() {
+      if (!confirm('mDNS Worker wirklich neu starten?')) return;
+      try {
+        const d = await getJSON('/admin/actions/restart-workers', { method: 'POST' });
+        setStatus(`Worker restart ok (${d.started_workers || 0} started)`, true);
+        await reloadAll();
+      } catch (e) {
+        setStatus(`Restart fehlgeschlagen: ${e.message}`, false);
+      }
     }
 
-    function formatIPs(arr) {
-        if (!arr || !arr.length) return "–";
-        return arr.join(", ");
+    async function reloadAll() {
+      try {
+        await Promise.all([loadOverview(), loadSpoofing(), loadMetrics(), loadSettings()]);
+        setStatus(`Aktualisiert: ${new Date().toLocaleTimeString()}`, true);
+      } catch (e) {
+        setStatus(`Reload fehlgeschlagen: ${e.message}`, false);
+      }
     }
 
-    function saveFilters() {
-        try {
-            const typeSelect = document.getElementById("serviceTypeSelect");
-            const searchInput = document.getElementById("searchInput");
-            const payload = {
-                service_type: typeSelect.value || "",
-                search: searchInput.value || ""
-            };
-            localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(payload));
-        } catch (e) {
-            console.warn("Konnte Filter nicht speichern:", e);
-        }
-    }
-
-    function restoreFiltersFromStorage() {
-        try {
-            const raw = localStorage.getItem(FILTER_STORAGE_KEY);
-            if (!raw) return;
-            const data = JSON.parse(raw);
-
-            const typeSelect = document.getElementById("serviceTypeSelect");
-            const searchInput = document.getElementById("searchInput");
-
-            if (data.service_type !== undefined) {
-                typeSelect.value = data.service_type;
-            }
-            if (data.search !== undefined) {
-                searchInput.value = data.search;
-            }
-        } catch (e) {
-            console.warn("Konnte Filter nicht laden:", e);
-        }
-    }
-
-    function clearFilters() {
-        const typeSelect = document.getElementById("serviceTypeSelect");
-        const searchInput = document.getElementById("searchInput");
-
-        typeSelect.value = "";
-        searchInput.value = "";
-
-        try {
-            localStorage.removeItem(FILTER_STORAGE_KEY);
-        } catch (e) {
-            console.warn("Konnte Filter nicht aus localStorage entfernen:", e);
-        }
-
-        applyFilters();
-    }
-
-    function applyFilters() {
-        const typeSelect = document.getElementById("serviceTypeSelect");
-        const searchInput = document.getElementById("searchInput");
-        const tbody = document.getElementById("serviceTableBody");
-        const countLabel = document.getElementById("serviceCount");
-
-        const typeFilter = typeSelect.value || "";
-        const search = (searchInput.value || "").toLowerCase();
-
-        tbody.innerHTML = "";
-
-        let filtered = allServices.filter(s => {
-            if (typeFilter && s.service_name !== typeFilter) {
-                return false;
-            }
-
-            if (search) {
-                const haystack = [
-                    s.instance_name || "",
-                    s.service_name || "",
-                    s.hostname || "",
-                    (s.addresses || []).join(","),
-                    (s.src_ips || []).join(",")
-                ].join(" ").toLowerCase();
-                if (!haystack.includes(search)) {
-                    return false;
-                }
-            }
-            return true;
-        });
-
-        filtered.forEach(svc => {
-            const tr = document.createElement("tr");
-            tr.className = "hover:bg-slate-50";
-
-            const hostText = svc.hostname || "–";
-            const ipText = svc.addresses && svc.addresses.length
-                ? svc.addresses.join(", ")
-                : "–";
-
-            tr.innerHTML = `
-                <td class="px-3 py-2 align-top">
-                    <span class="font-mono text-[0.7rem] sm:text-xs break-all" title="${svc.instance_name || ""}">
-                        ${shorten(svc.instance_name || "", 40)}
-                    </span>
-                </td>
-                <td class="px-3 py-2 align-top">
-                    <span class="font-mono text-[0.7rem] sm:text-xs break-all" title="${svc.service_name || ""}">
-                        ${shorten(svc.service_name || "", 32)}
-                    </span>
-                </td>
-                <td class="px-3 py-2 align-top">
-                    <div class="flex flex-col gap-0.5 text-[0.7rem] sm:text-xs font-mono text-slate-900 leading-tight">
-                        <span
-                            class="break-all"
-                            title="${hostText}"
-                        >
-                            ${shorten(hostText, 28)}
-                        </span>
-                        ${
-                            ipText !== "–"
-                                ? `<span
-                                        class="text-[0.65rem] text-slate-500 break-all"
-                                        title="${ipText}"
-                                >
-                                        ${shorten(ipText, 32)}
-                                </span>`
-                                : ""
-                        }
-                    </div>
-                </td>              
-                
-                <td class="px-3 py-2 align-top text-right">
-                    <span class="font-mono text-[0.7rem] sm:text-xs text-slate-900">
-                        ${svc.port != null ? svc.port : "–"}
-                    </span>
-                </td>
-                <td class="px-3 py-2 align-top whitespace-nowrap text-[0.7rem] sm:text-xs text-slate-600">
-                    ${formatLocalDateTime(svc.last_seen)}
-                </td>
-                <td class="px-3 py-2 align-top text-center">
-                    ${
-                        svc.reported_to_hub === true
-                            ? `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold" title="Wird an Hub gemeldet">✓</span>`
-                            : `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-500 text-xs font-semibold" title="Wird NICHT an Hub gemeldet">✗</span>`
-                    }
-                </td>
-                <td class="px-3 py-2 align-top text-right">
-                    <button
-                        class="inline-flex items-center rounded-lg border border-slate-300 px-2 py-1 text-[0.7rem] sm:text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1"
-                        onclick='openDetail(${JSON.stringify(JSON.stringify(svc))})'
-                    >
-                        Details
-                    </button>
-                </td>
-            `;
-
-            tbody.appendChild(tr);
-        });
-
-        countLabel.textContent = `${filtered.length} Service${filtered.length === 1 ? "" : "s"}`;
-    }
-
-    function openDetail(jsonStr) {
-        const svc = JSON.parse(jsonStr);
-
-        document.getElementById("detailTitle").textContent =
-            svc.hostname || svc.instance_name || "Details";
-
-        document.getElementById("detailInstance").textContent = svc.instance_name || "–";
-        document.getElementById("detailService").textContent = svc.service_name || "–";
-        document.getElementById("detailHostname").textContent = svc.hostname || "–";
-        document.getElementById("detailPort").textContent = svc.port != null ? svc.port : "–";
-        document.getElementById("detailLastSeen").textContent = formatLocalDateTime(svc.last_seen);
-
-        document.getElementById("detailIPs").textContent = formatIPs(svc.addresses);
-        document.getElementById("detailSrcIPs").textContent = formatIPs(svc.src_ips);
-
-        if (svc.txt && svc.txt.length) {
-            document.getElementById("detailTxt").textContent = svc.txt.join("\n");
-        } else {
-            document.getElementById("detailTxt").textContent = "Keine TXT-Records.";
-        }
-
-        document.getElementById("detailRaw").textContent = JSON.stringify(svc, null, 2);
-
-        document.getElementById("detailOverlay").classList.remove("hidden");
-    }
-
-    function closeDetail() {
-        document.getElementById("detailOverlay").classList.add("hidden");
-    }
-
-    async function loadServices() {
-        try {
-            const res = await fetch("/services");
-            const data = await res.json();
-            allServices = data.services || [];
-
-            // Service-Typen dynamisch sammeln
-            const typeSet = new Set();
-            allServices.forEach(s => {
-                if (s.service_name) {
-                    typeSet.add(s.service_name);
-                }
-            });
-
-            const select = document.getElementById("serviceTypeSelect");
-            // alles außer der ersten Option löschen
-            while (select.options.length > 1) {
-                select.remove(1);
-            }
-            Array.from(typeSet).sort().forEach(t => {
-                const opt = document.createElement("option");
-                opt.value = t;
-                opt.textContent = t;
-                select.appendChild(opt);
-            });
-
-            // gespeicherte Filter wiederherstellen und anwenden
-            restoreFiltersFromStorage();
-            applyFilters();
-        } catch (e) {
-            console.error("Fehler beim Laden der Services:", e);
-        }
-    }
-
-    async function loadHealth() {
-        const statusPill = document.getElementById("healthStatusPill");
-        const satIdSpan = document.getElementById("healthSatId");
-        const modeSpan = document.getElementById("healthMode");
-        const hubLineSpan = document.getElementById("healthHubLine");
-        const publishLineSpan = document.getElementById("healthPublishLine");
-        const registerLineSpan = document.getElementById("healthRegisterLine");
-        const hubUrlSpan = document.getElementById("healthHubUrl");
-        const lastOkSpan = document.getElementById("healthLastOk");
-        const errorLineSpan = document.getElementById("healthErrorLine");
-        const timeSpan = document.getElementById("healthTime");
-
-        try {
-            const res = await fetch("/health");
-            if (!res.ok) {
-                throw new Error("HTTP " + res.status);
-            }
-            const data = await res.json();
-
-            const satStatus = data.status || "unknown";
-            const satId = data.sat_id || "–";
-            const hubUrl = data.hub_url || "–";
-            const heartbeat = data.time || null;
-            const modeLabel = data.mode_label || "–";
-            const publishToHub = data.publish_to_hub === true;
-            const registerEnabled = data.hub_register_enabled === true;
-            const interfaceSource = data.interface_config_source || "none";
-
-            const hubOk = data.hub_ok;
-            const hubStatus = data.hub_status || "unknown";
-            const hubLastOk = data.hub_last_ok || null;
-            const hubLastError = data.hub_last_error || null;
-
-            const lastOkTs = parseTime(hubLastOk);
-            const lastErrTs = parseTime(hubLastError);
-
-            // Overall-Status bestimmen: online / degraded
-            let overall = satStatus === "degraded" ? "degraded" : "online";
-            if (registerEnabled === true && (hubOk === false || hubStatus !== "ok" || (lastErrTs && lastErrTs > lastOkTs))) {
-                overall = "degraded";
-            }
-
-            // Status-Pill Styling
-            statusPill.textContent = "";
-            const dot = document.createElement("span");
-            dot.className = "inline-block h-2 w-2 rounded-full mr-1";
-
-            let statusText = `Status: ${overall}`;
-            statusPill.className =
-                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[0.7rem] sm:text-xs";
-
-            if (overall === "online") {
-                statusPill.classList.add(
-                    "border-emerald-200",
-                    "bg-emerald-50",
-                    "text-emerald-700"
-                );
-                dot.classList.add("bg-emerald-500");
-                statusText = "Status: online";
-            } else {
-                statusPill.classList.add(
-                    "border-amber-200",
-                    "bg-amber-50",
-                    "text-amber-700"
-                );
-                dot.classList.add("bg-amber-500");
-                statusText = "Status: degraded";
-            }
-
-            statusPill.appendChild(dot);
-            statusPill.appendChild(document.createTextNode(statusText));
-
-            // Sat-ID
-            satIdSpan.textContent = `Sat ID: ${satId}`;
-            modeSpan.textContent = `Modus: ${modeLabel}`;
-
-            // Hub-Infos
-            let hubLineText = "Hub-Status: unbekannt";
-            if (registerEnabled === false) {
-                hubLineText = "Hub-Status: deaktiviert";
-            } else if (hubOk === true && overall === "online") {
-                hubLineText = "Hub-Status: verbunden";
-            } else if (overall === "degraded") {
-                hubLineText = "Hub-Status: gestört";
-            }
-            hubLineSpan.textContent = hubLineText;
-            publishLineSpan.textContent = `Hub-Service-Publish: ${publishToHub ? "aktiv" : "deaktiviert"}`;
-            registerLineSpan.textContent = `Hub-Registrierung: ${registerEnabled ? `aktiv (${interfaceSource})` : "deaktiviert"}`;
-
-            hubUrlSpan.textContent = `Hub: ${hubUrl}`;
-            lastOkSpan.textContent = hubLastOk
-                ? `Letzte erfolgreiche Verbindung: ${formatLocalDateTime(hubLastOk)}`
-                : "Letzte erfolgreiche Verbindung: –";
-
-            if (hubLastError && (hubLastError.msg || hubLastError.time || typeof hubLastError === "string")) {
-                let msg = "";
-                let errTime = null;
-                if (typeof hubLastError === "string") {
-                    msg = hubLastError;
-                } else {
-                    msg = hubLastError.msg || JSON.stringify(hubLastError);
-                    errTime = hubLastError.time || null;
-                }
-                const timePart = errTime ? ` (${formatLocalDateTime(errTime)})` : "";
-                errorLineSpan.textContent = `Letzter Fehler: ${msg}${timePart}`;
-                errorLineSpan.classList.remove("hidden");
-            } else {
-                errorLineSpan.textContent = "Letzter Fehler: –";
-                errorLineSpan.classList.add("hidden");
-            }
-
-            timeSpan.textContent = `Letzter Heartbeat (Sat): ${formatLocalDateTime(heartbeat)}`;
-        } catch (e) {
-            console.error("Fehler beim Laden von /health:", e);
-            statusPill.className =
-                "inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[0.7rem] sm:text-xs text-red-700";
-            statusPill.textContent = "Status: offline / Fehler";
-
-            satIdSpan.textContent = "Sat ID: –";
-            modeSpan.textContent = "Modus: –";
-            hubLineSpan.textContent = "Hub-Status: unbekannt (Fehler bei /health)";
-            publishLineSpan.textContent = "Hub-Service-Publish: –";
-            registerLineSpan.textContent = "Hub-Registrierung: –";
-            hubUrlSpan.textContent = "Hub: –";
-            lastOkSpan.textContent = "Letzte erfolgreiche Verbindung: –";
-            errorLineSpan.textContent = "Letzter Fehler: –";
-            errorLineSpan.classList.add("hidden");
-            timeSpan.textContent = "Letzter Heartbeat (Sat): –";
-        }
-    }
-
-    document.getElementById("reloadBtn").addEventListener("click", () => {
-        loadServices();
-        loadHealth();
-    });
-
-    document.getElementById("resetFiltersBtn").addEventListener("click", () => {
-        clearFilters();
-    });
-
-    document.getElementById("serviceTypeSelect").addEventListener("change", () => {
-        saveFilters();
-        applyFilters();
-    });
-
-    document.getElementById("searchInput").addEventListener("input", () => {
-        saveFilters();
-        applyFilters();
-    });
-
-    // ESC schließt Modal
-    document.addEventListener("keydown", (ev) => {
-        if (ev.key === "Escape") {
-            closeDetail();
-        }
-    });
-
-    // initial laden
-    loadServices();
-    loadHealth();
-
-    // optional: Auto-Refresh des Health-Status alle 30 Sekunden
-    setInterval(loadHealth, 30000);
-</script>
+    reloadAll();
+  </script>
 </body>
 </html>

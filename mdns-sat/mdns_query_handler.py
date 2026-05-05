@@ -11,6 +11,7 @@ from mdns_utils import (
 )
 from mdns_helpers import ensure_fqdn
 from mdns_outbound import send_mdns_response
+from sat_admin import ADMIN_STATS
 
 logger = logging.getLogger("mdns-sat.query")
 
@@ -30,6 +31,7 @@ def handle_query(worker, questions, addr, known_answers: List[Dict[str, Any]]):
       - worker._build_service_response_packet(...)
     """
     client_ip, client_port = addr
+    ADMIN_STATS.increment("queries_received_total", len(questions or []))
 
     if not worker.current_services:
         return
