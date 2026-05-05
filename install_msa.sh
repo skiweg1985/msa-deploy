@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ── Pfade ──────────────────────────────────────────────────────────────────
 BASE_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 SAT_DIR="$BASE_DIR/mdns-sat"
 HUB_DIR="$BASE_DIR/mdns-hub"
@@ -18,10 +19,14 @@ APT_PACKAGES=(
   fping
 )
 
+# ── Zustand ────────────────────────────────────────────────────────────────
 INTERACTIVE=true
 ACTION=""
 HAS_TTY=false
 USE_COLOR=false
+HAS_GUM=false
+AUTO_INSTALL_GUM=false
+LOG_FILE="${MSA_LOG_FILE:-}"
 SUCCESS_STEPS=0
 FAILED_STEPS=0
 SUMMARY_ITEMS=()
@@ -29,6 +34,7 @@ WARNING_ITEMS=()
 STATUS_SERVICES=()
 CONFIG_ACTION=""
 
+# ── Terminal-Erkennung ─────────────────────────────────────────────────────
 if [[ -t 0 && -t 1 ]]; then
   HAS_TTY=true
 fi
@@ -37,6 +43,16 @@ if [[ "$HAS_TTY" == true && -z "${NO_COLOR:-}" && "${TERM:-}" != "dumb" ]]; then
   USE_COLOR=true
 fi
 
+refresh_has_gum() {
+  HAS_GUM=false
+  if [[ "$HAS_TTY" == true ]] && command -v gum >/dev/null 2>&1; then
+    HAS_GUM=true
+  fi
+}
+
+refresh_has_gum
+
+# ── Farben ─────────────────────────────────────────────────────────────────
 if [[ "$USE_COLOR" == true ]]; then
   C_RESET=$'\033[0m'
   C_BOLD=$'\033[1m'
@@ -57,31 +73,470 @@ else
   C_CYAN=""
 fi
 
+# ═══════════════════════════════════════════════════════════════════════════
+# UI-Abstraktionsschicht
+#   gum (TUI) wenn vorhanden, sonst klassisches read/echo.
+# ═══════════════════════════════════════════════════════════════════════════
+
+ui_header() {
+  local title="$1"
+  local subtitle="${2:-}"
+  if [[ "$HAS_GUM" == true ]]; then
+    printf "\n"
+    if [[ -n "$subtitle" ]]; then
+      gum style --border rounded --padding "1 3" --border-foreground 6 \
+        "$title" "$subtitle"
+    else
+      gum style --border rounded --padding "1 3" --border-foreground 6 "$title"
+    fi
+  else
+    printf "%s%s%s%s\n" "$C_BOLD" "$C_CYAN" "$title" "$C_RESET"
+    [[ -n "$subtitle" ]] && printf "%s%s%s\n" "$C_DIM" "$subtitle" "$C_RESET"
+  fi
+}
+
+ui_choose() {
+  local header="$1"
+  shift
+  local options=("$@")
+
+  if [[ "$HAS_GUM" == true ]]; then
+    gum choose --header "$header" "${options[@]}"
+    return
+  fi
+
+  printf "\n%s%s%s\n" "$C_BOLD" "$header" "$C_RESET" >&2
+  local i
+  for i in "${!options[@]}"; do
+    printf "  %d) %s\n" "$i" "${options[$i]}" >&2
+  done
+  printf "\n" >&2
+
+  local idx
+  read -r -p "Auswahl: " idx || true
+  if [[ "$idx" =~ ^[0-9]+$ && $idx -ge 0 && $idx -lt ${#options[@]} ]]; then
+    printf "%s" "${options[$idx]}"
+  fi
+}
+
+ui_confirm() {
+  local prompt="$1"
+  local default="${2:-y}"
+
+  if [[ "$INTERACTIVE" != true || "$HAS_TTY" != true ]]; then
+    [[ "$default" == "y" ]]
+    return
+  fi
+
+  if [[ "$HAS_GUM" == true ]]; then
+    if [[ "$default" == "y" ]]; then
+      gum confirm --default=yes --affirmative "Ja" --negative "Nein" "$prompt"
+    else
+      gum confirm --default=no --affirmative "Ja" --negative "Nein" "$prompt"
+    fi
+    return
+  fi
+
+  local answer
+  while true; do
+    if [[ "$default" == "y" ]]; then
+      read -r -p "$prompt [Y/n] " answer || true
+      answer="${answer:-y}"
+    else
+      read -r -p "$prompt [y/N] " answer || true
+      answer="${answer:-n}"
+    fi
+    case "${answer,,}" in
+      y|yes) return 0 ;;
+      n|no)  return 1 ;;
+      *) printf "%s[WARN]%s Bitte 'y' oder 'n' eingeben.\n" "$C_YELLOW" "$C_RESET" >&2 ;;
+    esac
+  done
+}
+
+ui_input() {
+  local prompt="$1"
+  local default="${2:-}"
+
+  if [[ "$INTERACTIVE" != true || "$HAS_TTY" != true ]]; then
+    printf "%s" "$default"
+    return 0
+  fi
+
+  if [[ "$HAS_GUM" == true ]]; then
+    gum input --header "$prompt" --placeholder "$default" --value "$default"
+    return
+  fi
+
+  local answer
+  read -r -p "$prompt [$default] " answer || true
+  printf "%s" "${answer:-$default}"
+}
+
+ui_secret() {
+  local prompt="$1"
+
+  if [[ "$INTERACTIVE" != true || "$HAS_TTY" != true ]]; then
+    printf ""
+    return 0
+  fi
+
+  if [[ "$HAS_GUM" == true ]]; then
+    gum input --header "$prompt" --password --placeholder "********"
+    return
+  fi
+
+  local answer
+  read -r -s -p "$prompt: " answer || true
+  printf "\n" >&2
+  printf "%s" "$answer"
+}
+
+ui_step() {
+  local label="$1"
+  shift
+  local use_spinner=false
+
+  if [[ "$HAS_GUM" == true && "$INTERACTIVE" == true ]] \
+     && ! declare -F "$1" >/dev/null 2>&1; then
+    use_spinner=true
+  fi
+
+  if [[ "$use_spinner" == true ]]; then
+    if [[ -n "$LOG_FILE" ]]; then
+      gum spin --spinner dot --title "  $label" \
+        -- bash -c '"$@" >>"$0" 2>&1' "$LOG_FILE" "$@"
+    else
+      gum spin --spinner dot --title "  $label" -- "$@"
+    fi
+  else
+    if [[ "$HAS_GUM" != true ]]; then
+      printf "%s[....]%s %s\n" "$C_CYAN" "$C_RESET" "$label"
+    fi
+    if [[ -n "$LOG_FILE" ]]; then
+      "$@" >>"$LOG_FILE" 2>&1
+    else
+      "$@"
+    fi
+  fi
+}
+
+ui_error() {
+  if [[ "$HAS_GUM" == true ]]; then
+    gum style --foreground 1 "✗ $1" >&2
+  else
+    printf "%s[FAIL]%s %s\n" "$C_RED" "$C_RESET" "$1" >&2
+  fi
+}
+
+ui_warn() {
+  if [[ "$HAS_GUM" == true ]]; then
+    gum style --foreground 3 "⚠ $1"
+  else
+    printf "%s[WARN]%s %s\n" "$C_YELLOW" "$C_RESET" "$1"
+  fi
+}
+
+ui_summary() {
+  local selected_action="$1"
+  local label item service
+  label="$(action_label "$selected_action")"
+
+  local border_color=2
+  [[ $FAILED_STEPS -gt 0 ]] && border_color=1
+
+  local summary_lines=()
+  summary_lines+=("Aktion:          $label")
+  summary_lines+=("Erfolgreich:     $SUCCESS_STEPS")
+  [[ $FAILED_STEPS -gt 0 ]] && summary_lines+=("Fehlgeschlagen:  $FAILED_STEPS")
+
+  if [[ ${#SUMMARY_ITEMS[@]} -gt 0 ]]; then
+    summary_lines+=("")
+    summary_lines+=("Ergebnis:")
+    for item in "${SUMMARY_ITEMS[@]}"; do
+      summary_lines+=("  • $item")
+    done
+  fi
+
+  if [[ ${#WARNING_ITEMS[@]} -gt 0 ]]; then
+    summary_lines+=("")
+    summary_lines+=("Hinweise:")
+    for item in "${WARNING_ITEMS[@]}"; do
+      summary_lines+=("  ⚠ $item")
+    done
+  fi
+
+  if [[ ${#STATUS_SERVICES[@]} -gt 0 ]]; then
+    summary_lines+=("")
+    summary_lines+=("Service-Befehle:")
+    for service in "${STATUS_SERVICES[@]}"; do
+      summary_lines+=("  systemctl status $service --no-pager")
+      summary_lines+=("  journalctl -u $service -n 50 --no-pager")
+    done
+    summary_lines+=("")
+    summary_lines+=("Logs: /var/log/msa/")
+  fi
+
+  [[ -n "$LOG_FILE" ]] && summary_lines+=("Logfile: $LOG_FILE")
+
+  printf "\n"
+  {
+    gum style --bold "Zusammenfassung"
+    printf "\n"
+    printf "%s\n" "${summary_lines[@]}"
+  } | gum style --border double --padding "1 3" --border-foreground "$border_color"
+}
+
+# ── Ausgabehilfen ──────────────────────────────────────────────────────────
+
 print_banner() {
-  printf "%s%sMSA Setup / Management%s\n" "$C_BOLD" "$C_CYAN" "$C_RESET"
-  printf "%sRepo:%s %s\n" "$C_DIM" "$C_RESET" "$BASE_DIR"
+  ui_header "MSA Setup / Management" "Repo: $BASE_DIR"
 }
 
 print_section() {
   local title="$1"
-  printf "\n%s== %s ==%s\n" "$C_BOLD" "$title" "$C_RESET"
+  if [[ "$HAS_GUM" == true ]]; then
+    printf "\n"
+    gum style --bold --foreground 6 "── $title ──"
+  else
+    printf "\n%s== %s ==%s\n" "$C_BOLD" "$title" "$C_RESET"
+  fi
 }
 
 print_info() {
-  printf "%s[INFO]%s %s\n" "$C_BLUE" "$C_RESET" "$1"
+  if [[ "$HAS_GUM" == true ]]; then
+    gum style --foreground 4 "ℹ $1"
+  else
+    printf "%s[INFO]%s %s\n" "$C_BLUE" "$C_RESET" "$1"
+  fi
 }
 
-print_warn() {
-  printf "%s[WARN]%s %s\n" "$C_YELLOW" "$C_RESET" "$1"
-}
+print_warn() { ui_warn "$1"; }
 
-print_error() {
-  printf "%s[FAIL]%s %s\n" "$C_RED" "$C_RESET" "$1" >&2
-}
+print_error() { ui_error "$1"; }
 
 print_ok() {
-  printf "%s[ OK ]%s %s\n" "$C_GREEN" "$C_RESET" "$1"
+  if [[ "$HAS_GUM" == true ]]; then
+    gum style --foreground 2 "✓ $1"
+  else
+    printf "%s[ OK ]%s %s\n" "$C_GREEN" "$C_RESET" "$1"
+  fi
 }
+
+# ── gum (optional, Linux) ─────────────────────────────────────────────────
+
+gum_linux_arch_slug() {
+  local m
+  m="$(uname -m 2>/dev/null || echo "")"
+  case "$m" in
+    x86_64|amd64)        printf "x86_64" ;;
+    aarch64|arm64)       printf "arm64" ;;
+    armv7l)              printf "armv7" ;;
+    armv6l)              printf "armv6" ;;
+    armv5*)              printf "armv6" ;;
+    armhf)               printf "armv7" ;;
+    i686|i386)           printf "i386" ;;
+    *)                   return 1 ;;
+  esac
+}
+
+gum_vendor_release_subdir() {
+  local a
+  a="$(gum_linux_arch_slug)" || return 1
+  printf "Linux_%s" "$a"
+}
+
+gum_vendored_binary_path() {
+  local root sub
+  root="${GUM_VENDOR_ROOT:-}"
+  [[ -n "$root" ]] || return 1
+  sub="$(gum_vendor_release_subdir)" || return 1
+  printf "%s/%s/gum" "$root" "$sub"
+}
+
+install_gum_copy_to_prefix() {
+  local gum_bin="$1"
+  local prefix="${GUM_INSTALL_PREFIX:-/usr/local/bin}"
+
+  if ! mkdir -p "$prefix"; then
+    ui_error "gum: Zielverzeichnis nicht anlegbar: $prefix"
+    return 1
+  fi
+  if ! install -m 0755 "$gum_bin" "$prefix/gum"; then
+    ui_error "gum: Kopieren nach $prefix/gum fehlgeschlagen."
+    return 1
+  fi
+  hash -r 2>/dev/null || true
+  return 0
+}
+
+install_gum_from_vendor() {
+  local src=""
+  if [[ -n "${MSA_GUM_BINARY:-}" ]]; then
+    src="$MSA_GUM_BINARY"
+  else
+    src="$(gum_vendored_binary_path)" || return 1
+  fi
+  if [[ ! -f "$src" || ! -s "$src" ]]; then
+    return 1
+  fi
+  install_gum_copy_to_prefix "$src"
+}
+
+gum_download() {
+  local url="$1" out="$2"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL --max-time 300 "$url" -o "$out"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -qO "$out" --timeout=300 "$url"
+  else
+    return 1
+  fi
+}
+
+gum_resolve_version() {
+  if [[ -n "${GUM_VERSION:-}" ]]; then
+    printf "%s" "$GUM_VERSION"
+    return 0
+  fi
+  if command -v python3 >/dev/null 2>&1; then
+    local v
+    v="$(python3 <<'PY'
+import json
+import urllib.request
+
+req = urllib.request.Request(
+    "https://api.github.com/repos/charmbracelet/gum/releases/latest",
+    headers={"User-Agent": "msa-install_msa", "Accept": "application/vnd.github+json"},
+)
+with urllib.request.urlopen(req, timeout=60) as resp:
+    tag = json.load(resp)["tag_name"]
+print(tag[1:] if tag.startswith("v") else tag)
+PY
+)" && [[ -n "$v" ]] && printf "%s" "$v" && return 0
+  fi
+  local json tag
+  json="$(curl -fsSL --max-time 60 \
+    -H "Accept: application/vnd.github+json" \
+    -A "msa-install_msa" \
+    "https://api.github.com/repos/charmbracelet/gum/releases/latest")" || return 1
+  tag="$(printf "%s" "$json" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"v\([^"]*\)".*/\1/p' | head -n1)"
+  [[ -n "$tag" ]] || return 1
+  printf "%s" "$tag"
+}
+
+install_gum_from_github() {
+  local ver arch_slug url tmpdir tgz gum_bin
+  arch_slug="$(gum_linux_arch_slug)" || {
+    ui_error "gum: Nicht unterstuetzte CPU-Architektur: $(uname -m 2>/dev/null || echo unknown)"
+    return 1
+  }
+  ver="$(gum_resolve_version)" || {
+    ui_error "gum: Release-Version konnte nicht ermittelt werden."
+    return 1
+  }
+  url="https://github.com/charmbracelet/gum/releases/download/v${ver}/gum_${ver}_Linux_${arch_slug}.tar.gz"
+
+  tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/msa-gum.XXXXXX")" || return 1
+  tgz="$tmpdir/gum.tgz"
+
+  set +e
+  gum_download "$url" "$tgz"
+  local dl_rc=$?
+  set -e
+  if [[ $dl_rc -ne 0 ]]; then
+    rm -rf "$tmpdir"
+    ui_error "gum: Download fehlgeschlagen (${url})."
+    return 1
+  fi
+
+  if ! tar -xzf "$tgz" -C "$tmpdir"; then
+    rm -rf "$tmpdir"
+    ui_error "gum: Archiv konnte nicht entpackt werden."
+    return 1
+  fi
+
+  gum_bin="$(find "$tmpdir" -type f -name gum 2>/dev/null | head -n1)"
+  if [[ -z "$gum_bin" || ! -f "$gum_bin" ]]; then
+    rm -rf "$tmpdir"
+    ui_error "gum: Binary nicht im Archiv gefunden."
+    return 1
+  fi
+
+  set +e
+  install_gum_copy_to_prefix "$gum_bin"
+  local inst_rc=$?
+  set -e
+  rm -rf "$tmpdir"
+  if [[ $inst_rc -ne 0 ]]; then
+    return 1
+  fi
+  return 0
+}
+
+install_gum_from_vendor_or_github() {
+  GUM_LAST_INSTALL_SOURCE=""
+  if install_gum_from_vendor; then
+    GUM_LAST_INSTALL_SOURCE="vendor"
+    return 0
+  fi
+  if install_gum_from_github; then
+    GUM_LAST_INSTALL_SOURCE="github"
+    return 0
+  fi
+  return 1
+}
+
+msa_no_auto_gum_active() {
+  case "${MSA_NO_AUTO_GUM:-}" in
+    1|true|TRUE|yes|Yes|y|Y) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+maybe_offer_gum_install() {
+  if command -v gum >/dev/null 2>&1; then
+    refresh_has_gum
+    return 0
+  fi
+
+  if [[ "$(uname -s)" != "Linux" ]]; then
+    [[ "$AUTO_INSTALL_GUM" == true ]] \
+      && print_warn "gum: Installation nur unter Linux moeglich."
+    return 0
+  fi
+
+  if [[ "$EUID" -ne 0 ]]; then
+    [[ "$AUTO_INSTALL_GUM" == true ]] \
+      && print_warn "gum: Installation erfordert Root (z. B. sudo $0)."
+    return 0
+  fi
+
+  if msa_no_auto_gum_active && [[ "$AUTO_INSTALL_GUM" != true ]]; then
+    return 0
+  fi
+
+  print_info "gum fehlt – Installation wird versucht (${GUM_INSTALL_PREFIX:-/usr/local/bin}; MSA_GUM_BINARY / GUM_VENDOR_ROOT, sonst GitHub) …"
+  set +e
+  install_gum_from_vendor_or_github
+  local rc=$?
+  set -e
+
+  refresh_has_gum
+
+  if [[ $rc -eq 0 ]]; then
+    case "${GUM_LAST_INSTALL_SOURCE:-}" in
+      vendor) print_ok "gum installiert (lokale Quelle)." ;;
+      github) print_ok "gum installiert (GitHub-Release)." ;;
+      *)      print_ok "gum installiert." ;;
+    esac
+    return 0
+  fi
+  print_warn "gum wurde nicht installiert; es erfolgt weiterhin klassische Textein-/ausgabe."
+  return 0
+}
+
+# ── Summary-Tracking ──────────────────────────────────────────────────────
 
 reset_summary() {
   SUCCESS_STEPS=0
@@ -110,14 +565,16 @@ register_service_hint() {
   STATUS_SERVICES+=("$service")
 }
 
+# ── Schritt-Ausfuehrung ──────────────────────────────────────────────────
+
 run_step() {
   local label="$1"
   shift
+  local rc=0
 
-  printf "%s[....]%s %s\n" "$C_CYAN" "$C_RESET" "$label"
   set +e
-  "$@"
-  local rc=$?
+  ui_step "$label" "$@"
+  rc=$?
   set -e
 
   if [[ $rc -eq 0 ]]; then
@@ -130,6 +587,8 @@ run_step() {
 
   return "$rc"
 }
+
+# ── Pruefhilfen ───────────────────────────────────────────────────────────
 
 require_root() {
   [[ "$EUID" -eq 0 ]]
@@ -147,31 +606,10 @@ require_command() {
   command -v "$1" >/dev/null 2>&1
 }
 
+# ── Eingabehilfen (Wrapper um UI-Layer) ───────────────────────────────────
+
 ask_yes_no() {
-  local prompt="$1"
-  local default="${2:-y}"
-  local answer
-
-  if [[ "$INTERACTIVE" != true || "$HAS_TTY" != true ]]; then
-    [[ "$default" == "y" ]]
-    return
-  fi
-
-  while true; do
-    if [[ "$default" == "y" ]]; then
-      read -r -p "$prompt [Y/n] " answer || true
-      answer="${answer:-y}"
-    else
-      read -r -p "$prompt [y/N] " answer || true
-      answer="${answer:-n}"
-    fi
-
-    case "${answer,,}" in
-      y|yes) return 0 ;;
-      n|no) return 1 ;;
-      *) print_warn "Bitte 'y' oder 'n' eingeben." ;;
-    esac
-  done
+  ui_confirm "$1" "${2:-y}"
 }
 
 ask_input() {
@@ -179,14 +617,7 @@ ask_input() {
   local default="$2"
   local result_var="$3"
   local answer
-
-  if [[ "$INTERACTIVE" != true || "$HAS_TTY" != true ]]; then
-    printf -v "$result_var" "%s" "$default"
-    return 0
-  fi
-
-  read -r -p "$prompt [$default] " answer || true
-  answer="${answer:-$default}"
+  answer="$(ui_input "$prompt" "$default")"
   printf -v "$result_var" "%s" "$answer"
 }
 
@@ -201,17 +632,16 @@ ask_secret_required() {
   fi
 
   while true; do
-    read -r -s -p "$prompt: " answer || true
-    printf "\n"
-
+    answer="$(ui_secret "$prompt")"
     if [[ -n "$answer" ]]; then
       printf -v "$result_var" "%s" "$answer"
       return 0
     fi
-
-    print_warn "Eingabe darf nicht leer sein."
+    ui_warn "Eingabe darf nicht leer sein."
   done
 }
+
+# ── Token / Hostname ─────────────────────────────────────────────────────
 
 sanitize_token() {
   local value="${1,,}"
@@ -231,6 +661,8 @@ generate_default_sat_id() {
   printf "%s-%04d" "$host" $((RANDOM % 10000))
 }
 
+# ── Datei- und YAML-Hilfen ───────────────────────────────────────────────
+
 show_file_preview() {
   local path="$1"
   print_section "Datei: $path"
@@ -240,7 +672,6 @@ show_file_preview() {
 choose_existing_config_action() {
   local label="$1"
   local path="$2"
-  local choice
 
   if [[ ! -f "$path" ]]; then
     CONFIG_ACTION="create"
@@ -253,21 +684,37 @@ choose_existing_config_action() {
     return 0
   fi
 
-  while true; do
-    printf "%s[INFO]%s %s existiert bereits: %s\n" "$C_BLUE" "$C_RESET" "$label" "$path"
-    printf "  k) behalten\n"
-    printf "  o) ueberschreiben\n"
-    printf "  a) anzeigen\n"
-    read -r -p "Auswahl [k/o/a] " choice || true
-    choice="${choice:-k}"
+  print_info "$label existiert bereits: $path"
 
-    case "${choice,,}" in
-      k) CONFIG_ACTION="keep"; return 0 ;;
-      o) CONFIG_ACTION="overwrite"; return 0 ;;
-      a) show_file_preview "$path" ;;
-      *) print_warn "Bitte 'k', 'o' oder 'a' eingeben." ;;
-    esac
-  done
+  if [[ "$HAS_GUM" == true ]]; then
+    local choice
+    while true; do
+      choice="$(gum choose --header "Konfiguration: $path" \
+        "Behalten" "Ueberschreiben" "Anzeigen")" || true
+      case "$choice" in
+        "Behalten")        CONFIG_ACTION="keep";      return 0 ;;
+        "Ueberschreiben")  CONFIG_ACTION="overwrite";  return 0 ;;
+        "Anzeigen")        show_file_preview "$path" ;;
+        *)                 ui_warn "Bitte eine Option waehlen." ;;
+      esac
+    done
+  else
+    local choice
+    while true; do
+      printf "%s[INFO]%s %s existiert bereits: %s\n" "$C_BLUE" "$C_RESET" "$label" "$path"
+      printf "  k) behalten\n"
+      printf "  o) ueberschreiben\n"
+      printf "  a) anzeigen\n"
+      read -r -p "Auswahl [k/o/a] " choice || true
+      choice="${choice:-k}"
+      case "${choice,,}" in
+        k) CONFIG_ACTION="keep";      return 0 ;;
+        o) CONFIG_ACTION="overwrite";  return 0 ;;
+        a) show_file_preview "$path" ;;
+        *) print_warn "Bitte 'k', 'o' oder 'a' eingeben." ;;
+      esac
+    done
+  fi
 }
 
 set_yaml_value() {
@@ -318,51 +765,7 @@ copy_file() {
   cp "$source" "$target"
 }
 
-ensure_base_packages() {
-  print_section "Systempakete"
-  run_step "APT Paketindex aktualisieren" apt update || return 1
-  run_step "Grundpakete installieren" apt install -y "${APT_PACKAGES[@]}" || return 1
-}
-
-ensure_venv() {
-  print_section "Python venv"
-  print_info "Pfad: $VENV_DIR"
-
-  if [[ ! -d "$VENV_DIR" ]]; then
-    run_step "Python venv erstellen" python3 -m venv "$VENV_DIR" || return 1
-    add_summary "venv erstellt: $VENV_DIR"
-  else
-    print_info "venv existiert bereits und wird weiterverwendet."
-    add_summary "venv wiederverwendet: $VENV_DIR"
-  fi
-
-  run_step "pip in der venv aktualisieren" "$VENV_DIR/bin/pip" install --upgrade pip || return 1
-  run_step \
-    "Python-Abhaengigkeiten installieren" \
-    "$VENV_DIR/bin/pip" install \
-    "uvicorn[standard]" \
-    fastapi \
-    netifaces \
-    requests \
-    pyyaml \
-    pydantic \
-    jinja2 \
-    python-multipart || return 1
-}
-
-ensure_manage_script() {
-  if [[ -x "$MANAGE_SCRIPT" ]]; then
-    return 0
-  fi
-
-  if [[ -f "$MANAGE_SCRIPT" ]]; then
-    run_step "manage_services.py ausfuehrbar machen" chmod +x "$MANAGE_SCRIPT" || return 1
-    return 0
-  fi
-
-  print_error "manage_services.py fehlt: $MANAGE_SCRIPT"
-  return 1
-}
+# ── SAT/HUB Konfiguration ───────────────────────────────────────────────
 
 configure_sat_bootstrap_values() {
   local target="$1"
@@ -503,6 +906,54 @@ prepare_hub_config() {
   esac
 }
 
+# ── System-Hilfen ────────────────────────────────────────────────────────
+
+ensure_base_packages() {
+  print_section "Systempakete"
+  run_step "APT Paketindex aktualisieren" apt update || return 1
+  run_step "Grundpakete installieren" apt install -y "${APT_PACKAGES[@]}" || return 1
+}
+
+ensure_venv() {
+  print_section "Python venv"
+  print_info "Pfad: $VENV_DIR"
+
+  if [[ ! -d "$VENV_DIR" ]]; then
+    run_step "Python venv erstellen" python3 -m venv "$VENV_DIR" || return 1
+    add_summary "venv erstellt: $VENV_DIR"
+  else
+    print_info "venv existiert bereits und wird weiterverwendet."
+    add_summary "venv wiederverwendet: $VENV_DIR"
+  fi
+
+  run_step "pip in der venv aktualisieren" "$VENV_DIR/bin/pip" install --upgrade pip || return 1
+  run_step \
+    "Python-Abhaengigkeiten installieren" \
+    "$VENV_DIR/bin/pip" install \
+    "uvicorn[standard]" \
+    fastapi \
+    netifaces \
+    requests \
+    pyyaml \
+    pydantic \
+    jinja2 \
+    python-multipart || return 1
+}
+
+ensure_manage_script() {
+  if [[ -x "$MANAGE_SCRIPT" ]]; then
+    return 0
+  fi
+
+  if [[ -f "$MANAGE_SCRIPT" ]]; then
+    run_step "manage_services.py ausfuehrbar machen" chmod +x "$MANAGE_SCRIPT" || return 1
+    return 0
+  fi
+
+  print_error "manage_services.py fehlt: $MANAGE_SCRIPT"
+  return 1
+}
+
 ensure_run_script() {
   local label="$1"
   local run_script="$2"
@@ -541,6 +992,8 @@ maybe_prepare_hub_user() {
     add_warning "Der systemd-Service laeuft weiterhin gemaess manage_services.py. Bei Bedarf Unit-Datei auf User=$hub_user anpassen."
   fi
 }
+
+# ── Installation / Deinstallation ────────────────────────────────────────
 
 install_venv_only() {
   ensure_base_packages
@@ -604,6 +1057,8 @@ ask_remove_venv_if_unused() {
   fi
 }
 
+# ── Preflight ────────────────────────────────────────────────────────────
+
 preflight_common() {
   print_section "Preflight"
   run_step "Root-Rechte pruefen" require_root || return 1
@@ -646,29 +1101,13 @@ run_preflight_for_action() {
   local selected_action="$1"
 
   case "$selected_action" in
-    venv-only)
-      preflight_venv_only
-      ;;
-    install-sat)
-      preflight_sat_install
-      ;;
-    install-hub)
-      preflight_hub_install
-      ;;
-    install-all)
-      preflight_sat_install
-      preflight_hub_install
-      ;;
-    uninstall-sat)
-      preflight_sat_uninstall
-      ;;
-    uninstall-hub)
-      preflight_hub_uninstall
-      ;;
-    uninstall-all)
-      preflight_sat_uninstall
-      preflight_hub_uninstall
-      ;;
+    venv-only)      preflight_venv_only ;;
+    install-sat)    preflight_sat_install ;;
+    install-hub)    preflight_hub_install ;;
+    install-all)    preflight_sat_install; preflight_hub_install ;;
+    uninstall-sat)  preflight_sat_uninstall ;;
+    uninstall-hub)  preflight_hub_uninstall ;;
+    uninstall-all)  preflight_sat_uninstall; preflight_hub_uninstall ;;
     *)
       print_error "Unbekannte Aktion: $selected_action"
       return 1
@@ -676,26 +1115,193 @@ run_preflight_for_action() {
   esac
 }
 
+# ── Review-Screen ────────────────────────────────────────────────────────
+
+show_review() {
+  local selected_action="$1"
+  local label
+  label="$(action_label "$selected_action")"
+
+  local lines=()
+  lines+=("Aktion:          $label")
+
+  case "$selected_action" in install-sat|install-all)
+    lines+=("SAT-Verzeichnis: $SAT_DIR") ;; esac
+  case "$selected_action" in install-hub|install-all)
+    lines+=("HUB-Verzeichnis: $HUB_DIR") ;; esac
+  case "$selected_action" in uninstall-sat|uninstall-all)
+    lines+=("SAT-Verzeichnis: $SAT_DIR") ;; esac
+  case "$selected_action" in uninstall-hub|uninstall-all)
+    lines+=("HUB-Verzeichnis: $HUB_DIR") ;; esac
+  case "$selected_action" in install-*|venv-only)
+    lines+=("Python venv:     $VENV_DIR") ;; esac
+
+  lines+=("")
+  lines+=("Geplante Schritte:")
+
+  case "$selected_action" in
+    venv-only)
+      lines+=("  - APT-Pakete installieren/aktualisieren")
+      lines+=("  - Python venv erstellen/aktualisieren")
+      ;;
+    install-sat)
+      lines+=("  - APT-Pakete installieren/aktualisieren")
+      lines+=("  - Python venv erstellen/aktualisieren")
+      lines+=("  - SAT konfigurieren")
+      lines+=("  - SAT systemd-Service anlegen")
+      ;;
+    install-hub)
+      lines+=("  - APT-Pakete installieren/aktualisieren")
+      lines+=("  - Python venv erstellen/aktualisieren")
+      lines+=("  - HUB konfigurieren")
+      lines+=("  - HUB systemd-Service anlegen")
+      ;;
+    install-all)
+      lines+=("  - APT-Pakete installieren/aktualisieren")
+      lines+=("  - Python venv erstellen/aktualisieren")
+      lines+=("  - SAT + HUB konfigurieren")
+      lines+=("  - SAT + HUB systemd-Services anlegen")
+      ;;
+    uninstall-sat)
+      lines+=("  - SAT systemd-Service entfernen")
+      ;;
+    uninstall-hub)
+      lines+=("  - HUB systemd-Service entfernen")
+      ;;
+    uninstall-all)
+      lines+=("  - SAT + HUB systemd-Services entfernen")
+      ;;
+  esac
+
+  if [[ "$HAS_GUM" == true ]]; then
+    printf "\n"
+    {
+      gum style --bold --foreground 4 "Aktionsuebersicht"
+      printf "\n"
+      printf "%s\n" "${lines[@]}"
+    } | gum style --border rounded --padding "1 2" --border-foreground 4
+  else
+    print_section "Aktionsuebersicht"
+    local line
+    for line in "${lines[@]}"; do
+      printf "  %s\n" "$line"
+    done
+  fi
+
+  if [[ "$INTERACTIVE" == true && "$HAS_TTY" == true ]]; then
+    printf "\n"
+    ui_confirm "Fortfahren?" "y" || { printf "Abgebrochen.\n"; return 1; }
+  fi
+}
+
+# ── Menue und Aktionen ──────────────────────────────────────────────────
+
 action_label() {
   case "$1" in
-    venv-only) printf "Nur venv installieren/aktualisieren" ;;
-    install-sat) printf "SAT installieren" ;;
-    install-hub) printf "HUB installieren" ;;
-    install-all) printf "SAT + HUB installieren" ;;
-    uninstall-sat) printf "SAT deinstallieren" ;;
-    uninstall-hub) printf "HUB deinstallieren" ;;
-    uninstall-all) printf "SAT + HUB deinstallieren" ;;
-    *) printf "%s" "$1" ;;
+    venv-only)      printf "Nur venv installieren/aktualisieren" ;;
+    install-sat)    printf "SAT installieren" ;;
+    install-hub)    printf "HUB installieren" ;;
+    install-all)    printf "SAT + HUB installieren" ;;
+    uninstall-sat)  printf "SAT deinstallieren" ;;
+    uninstall-hub)  printf "HUB deinstallieren" ;;
+    uninstall-all)  printf "SAT + HUB deinstallieren" ;;
+    *)              printf "%s" "$1" ;;
+  esac
+}
+
+show_menu() {
+  if [[ "$HAS_GUM" == true ]]; then
+    local items=(
+      "SAT installieren"
+      "HUB installieren"
+      "SAT + HUB installieren"
+      "venv-only"
+      "SAT deinstallieren"
+      "HUB deinstallieren"
+      "Alles deinstallieren"
+      "Beenden"
+    )
+    local choice
+    choice="$(gum choose --header "MSA Setup" "${items[@]}")" || true
+
+    case "$choice" in
+      "SAT installieren")         ACTION="install-sat" ;;
+      "HUB installieren")         ACTION="install-hub" ;;
+      "SAT + HUB installieren")   ACTION="install-all" ;;
+      "venv-only")                ACTION="venv-only" ;;
+      "SAT deinstallieren")       ACTION="uninstall-sat" ;;
+      "HUB deinstallieren")       ACTION="uninstall-hub" ;;
+      "Alles deinstallieren")     ACTION="uninstall-all" ;;
+      "Beenden")
+        printf "Beendet.\n"
+        exit 0
+        ;;
+      *) ACTION="" ;;
+    esac
+  else
+    print_section "Menue"
+    printf "  0) Nur venv / Python-Requirements installieren oder aktualisieren\n"
+    printf "  1) SAT installieren\n"
+    printf "  2) HUB installieren\n"
+    printf "  3) SAT + HUB installieren\n"
+    printf "  4) SAT deinstallieren\n"
+    printf "  5) HUB deinstallieren\n"
+    printf "  6) SAT + HUB deinstallieren\n"
+    printf "  q) Beenden\n\n"
+
+    local choice
+    read -r -p "Auswahl: " choice || true
+
+    case "${choice,,}" in
+      0) ACTION="venv-only" ;;
+      1) ACTION="install-sat" ;;
+      2) ACTION="install-hub" ;;
+      3) ACTION="install-all" ;;
+      4) ACTION="uninstall-sat" ;;
+      5) ACTION="uninstall-hub" ;;
+      6) ACTION="uninstall-all" ;;
+      q)
+        printf "Beendet.\n"
+        exit 0
+        ;;
+      *)
+        print_warn "Ungueltige Auswahl."
+        ACTION=""
+        ;;
+    esac
+  fi
+}
+
+execute_action() {
+  local selected_action="$1"
+
+  run_preflight_for_action "$selected_action"
+
+  case "$selected_action" in
+    venv-only)      install_venv_only ;;
+    install-sat)    install_sat ;;
+    install-hub)    install_hub ;;
+    install-all)    install_sat; install_hub ;;
+    uninstall-sat)  uninstall_sat; ask_remove_venv_if_unused ;;
+    uninstall-hub)  uninstall_hub; ask_remove_venv_if_unused ;;
+    uninstall-all)  uninstall_sat; uninstall_hub; ask_remove_venv_if_unused ;;
+    *)
+      print_error "Unbekannte Aktion: $selected_action"
+      return 1
+      ;;
   esac
 }
 
 print_summary() {
   local selected_action="$1"
-  local label
-  local item
-  local service
-
+  local label item service
   label="$(action_label "$selected_action")"
+
+  if [[ "$HAS_GUM" == true ]]; then
+    ui_summary "$selected_action"
+    return
+  fi
+
   print_section "Zusammenfassung"
   printf "%sAktion:%s %s\n" "$C_BOLD" "$C_RESET" "$label"
   printf "%sSchritte erfolgreich:%s %d\n" "$C_BOLD" "$C_RESET" "$SUCCESS_STEPS"
@@ -723,11 +1329,41 @@ print_summary() {
     done
     printf "  - Logs unter /var/log/msa/ pruefen\n"
   fi
+
+  [[ -n "$LOG_FILE" ]] && printf "%sLogfile:%s %s\n" "$C_BOLD" "$C_RESET" "$LOG_FILE"
 }
+
+# ── Aktionsausfuehrung ──────────────────────────────────────────────────
+
+run_selected_action() {
+  local selected_action="$1"
+  local rc
+
+  reset_summary
+
+  show_review "$selected_action" || return 1
+
+  set +e
+  execute_action "$selected_action"
+  rc=$?
+  set -e
+
+  print_summary "$selected_action"
+  return "$rc"
+}
+
+# ── CLI ──────────────────────────────────────────────────────────────────
 
 print_usage() {
   cat <<EOF
-Verwendung: $(basename "$0") [--non-interactive] [aktion]
+Verwendung: $(basename "$0") [optionen] [aktion]
+
+Optionen:
+  --non-interactive   Keine interaktiven Fragen
+  --install-gum       gum-Installation auch bei gesetztem MSA_NO_AUTO_GUM=1 versuchen
+
+Hinweis: Unter Linux als Root wird fehlendes gum installiert: MSA_GUM_BINARY oder
+  GUM_VENDOR_ROOT/Linux_<Arch>/gum, sonst GitHub. MSA_NO_AUTO_GUM=1 unterbindet den Versuch.
 
 Aktionen:
   venv-only
@@ -737,6 +1373,15 @@ Aktionen:
   uninstall-sat
   uninstall-hub
   uninstall-all
+
+Umgebungsvariablen:
+  MSA_LOG_FILE         Pfad zu einer Logdatei
+  MSA_NO_AUTO_GUM      1/true/y: keinen automatischen gum-Install-Versuch (Root/Linux)
+  NO_COLOR             Farbausgabe deaktivieren
+  GUM_VERSION          z. B. 0.17.0 (Default: aktuelles GitHub-Release)
+  GUM_INSTALL_PREFIX   Zielverzeichnis fuer gum (Default: /usr/local/bin)
+  GUM_VENDOR_ROOT      Verzeichnis mit Linux_<arch>/gum (leer = kein lokaler Baum)
+  MSA_GUM_BINARY       Voller Pfad zu gum (vor GUM_VENDOR_ROOT)
 
 Ohne Aktion startet interaktiv das Menue.
 Mit --non-interactive ist die Default-Aktion: install-all
@@ -748,6 +1393,9 @@ parse_args() {
     case "$1" in
       --non-interactive)
         INTERACTIVE=false
+        ;;
+      --install-gum)
+        AUTO_INSTALL_GUM=true
         ;;
       -h|--help)
         print_usage
@@ -770,96 +1418,11 @@ parse_args() {
   done
 }
 
-show_menu() {
-  local choice
-
-  print_section "Menue"
-  printf "  0) Nur venv / Python-Requirements installieren oder aktualisieren\n"
-  printf "  1) SAT installieren\n"
-  printf "  2) HUB installieren\n"
-  printf "  3) SAT + HUB installieren\n"
-  printf "  4) SAT deinstallieren\n"
-  printf "  5) HUB deinstallieren\n"
-  printf "  6) SAT + HUB deinstallieren\n"
-  printf "  q) Beenden\n\n"
-
-  read -r -p "Auswahl: " choice || true
-
-  case "${choice,,}" in
-    0) ACTION="venv-only" ;;
-    1) ACTION="install-sat" ;;
-    2) ACTION="install-hub" ;;
-    3) ACTION="install-all" ;;
-    4) ACTION="uninstall-sat" ;;
-    5) ACTION="uninstall-hub" ;;
-    6) ACTION="uninstall-all" ;;
-    q)
-      printf "Beendet.\n"
-      exit 0
-      ;;
-    *)
-      print_warn "Ungueltige Auswahl."
-      ACTION=""
-      ;;
-  esac
-}
-
-execute_action() {
-  local selected_action="$1"
-
-  run_preflight_for_action "$selected_action"
-
-  case "$selected_action" in
-    venv-only)
-      install_venv_only
-      ;;
-    install-sat)
-      install_sat
-      ;;
-    install-hub)
-      install_hub
-      ;;
-    install-all)
-      install_sat
-      install_hub
-      ;;
-    uninstall-sat)
-      uninstall_sat
-      ask_remove_venv_if_unused
-      ;;
-    uninstall-hub)
-      uninstall_hub
-      ask_remove_venv_if_unused
-      ;;
-    uninstall-all)
-      uninstall_sat
-      uninstall_hub
-      ask_remove_venv_if_unused
-      ;;
-    *)
-      print_error "Unbekannte Aktion: $selected_action"
-      return 1
-      ;;
-  esac
-}
-
-run_selected_action() {
-  local selected_action="$1"
-  local rc
-
-  reset_summary
-  set +e
-  execute_action "$selected_action"
-  rc=$?
-  set -e
-  print_summary "$selected_action"
-  return "$rc"
-}
-
 main() {
   local rc
 
   parse_args "$@"
+  maybe_offer_gum_install
   print_banner
 
   if [[ -z "$ACTION" && "$INTERACTIVE" == true ]]; then

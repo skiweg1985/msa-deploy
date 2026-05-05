@@ -207,10 +207,13 @@ def uninstall_service(service_key: str):
     print(f"→ Entferne Service {s['name']} …")
 
     # Service stoppen / deaktivieren
-    try:
-        run(["systemctl", "disable", "--now", s["name"]])
-    except subprocess.CalledProcessError:
-        print(f"⚠ Konnte {s['name']} ggf. nicht stoppen/deaktivieren (evtl. nicht existent).")
+    if unit_file.exists():
+        try:
+            run(["systemctl", "disable", "--now", s["name"]])
+        except subprocess.CalledProcessError:
+            print(f"⚠ Konnte {s['name']} ggf. nicht stoppen/deaktivieren.")
+    else:
+        print(f"ℹ Systemd-Unit {s['name']}.service ist nicht vorhanden und muss nicht deinstalliert werden.")
 
     # Unit-Datei löschen
     if unit_file.exists():
