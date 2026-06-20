@@ -212,6 +212,7 @@ UI_WS_LOCK = asyncio.Lock()
 
 # Optional in-memory state for WS-based info per Sat
 SAT_WS_STATE: Dict[str, Dict] = {}
+WS_SEND_TIMEOUT_SECONDS = 5.0
 
 # Main service registry
 SERVICE_REGISTRY: Dict[str, ServiceRegistryEntry] = {}
@@ -399,6 +400,51 @@ def find_latest_service_instance(service_key: str) -> Optional[ServiceInstance]:
             best_instance = inst
 
     return best_instance
+
+
+def reconcile_service_registry_entry_after_sat_ttl(
+    service_key: str,
+    now: datetime,
+    max_age: timedelta,
+) -> None:
+    """
+    Recompute a registry entry after deleting a stale per-satellite instance.
+    A service is globally offline only when no satellite still has a fresh
+    instance for the same service_key.
+    """
+    reg_entry = SERVICE_REGISTRY.get(service_key)
+    if reg_entry is None:
+        return
+
+    best_instance: Optional[ServiceInstance] = None
+    best_sat_id: Optional[str] = None
+    best_ts: Optional[datetime] = None
+
+    for candidate_sat_id, candidate_map in INGESTED_SERVICES_BY_SAT.items():
+        inst = candidate_map.get(service_key)
+        if inst is None:
+            continue
+
+        ts = inst.last_seen or now
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+
+        if now - ts > max_age:
+            continue
+
+        if best_ts is None or ts > best_ts:
+            best_instance = inst
+            best_sat_id = candidate_sat_id
+            best_ts = ts
+
+    if best_instance is not None and best_ts is not None:
+        reg_entry.last_instance = best_instance
+        reg_entry.last_seen = best_ts
+        reg_entry.last_sat_id = best_sat_id
+        reg_entry.online = True
+        return
+
+    reg_entry.online = False
 
 
 def generate_group_id_from_name(name: str) -> str:
@@ -979,6 +1025,19 @@ def auth_session(request: Request):
 # API: Sat register + get/set config
 # ─────────────────────────────────────────────
 
+def find_configured_mgmt_interface(
+    cfg: SatConfig,
+    mgmt_interface: Optional[str],
+    previous_mgmt_interface: Optional[str],
+) -> Optional[SatInterface]:
+    for candidate_name in (mgmt_interface, previous_mgmt_interface):
+        if not candidate_name:
+            continue
+        for iface in cfg.interfaces:
+            if iface.name == candidate_name:
+                return iface
+    return None
+
 @app.post("/api/v1/satellites/register", response_model=SatRegisterResponse)
 def register_sat(
     req: SatRegisterRequest,
@@ -988,6 +1047,16 @@ def register_sat(
     sat_id = req.satellite_id
     client_ip = request.client.host
     now = datetime.now(timezone.utc)
+    previous_meta = SATELLITES.get(sat_id)
+    previous_mgmt_interface = (
+        previous_meta.mgmt_interface
+        if isinstance(previous_meta, SatMeta)
+        else (
+            previous_meta.get("mgmt_interface")
+            if isinstance(previous_meta, dict)
+            else None
+        )
+    )
 
     meta_fields: Dict[str, Any] = {
         "hostname": req.hostname,
@@ -1005,7 +1074,11 @@ def register_sat(
 
     cfg = get_default_config_for_sat(sat_id)
 
-    iface = cfg.interfaces[0] if cfg.interfaces else None
+    iface = find_configured_mgmt_interface(
+        cfg,
+        meta.mgmt_interface,
+        previous_mgmt_interface,
+    )
     changed = False
     if iface:
         if iface.name != meta.mgmt_interface:
@@ -1293,9 +1366,7 @@ def ingest_services(
         if now - ls > max_age:
             del sat_map[s_key]
 
-            reg_entry = SERVICE_REGISTRY.get(s_key)
-            if reg_entry is not None:
-                reg_entry.online = False
+            reconcile_service_registry_entry_after_sat_ttl(s_key, now, max_age)
 
     # Persist registry after ingest + TTL updates
     save_service_registry()
@@ -1461,7 +1532,7 @@ async def update_spoof(
         len(targets),
     )
 
-    await broadcast_assignments_to_all_sats()
+    schedule_assignment_broadcast()
     return cfg
 
 # ─────────────────────────────────────────────
@@ -1935,7 +2006,10 @@ async def send_assignments_to_sat(sat_id: str):
     }
 
     try:
-        await ws.send_json(message)
+        await asyncio.wait_for(
+            ws.send_json(message),
+            timeout=WS_SEND_TIMEOUT_SECONDS,
+        )
         logger.info(
             "WS: Sent %d spoof assignments to satellite %s",
             len(assignments),
@@ -1952,8 +2026,22 @@ async def broadcast_assignments_to_all_sats():
     async with ACTIVE_WS_LOCK:
         sat_ids = list(ACTIVE_SAT_WEBSOCKETS.keys())
 
-    for sid in sat_ids:
-        await send_assignments_to_sat(sid)
+    await asyncio.gather(
+        *(send_assignments_to_sat(sid) for sid in sat_ids),
+        return_exceptions=True,
+    )
+
+
+def schedule_assignment_broadcast() -> None:
+    task = asyncio.create_task(broadcast_assignments_to_all_sats())
+
+    def _log_failure(done_task: asyncio.Task) -> None:
+        try:
+            done_task.result()
+        except Exception as e:
+            logger.error("WS: Assignment broadcast task failed: %s", e)
+
+    task.add_done_callback(_log_failure)
 
 
 @app.websocket("/ws/sat")

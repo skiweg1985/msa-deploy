@@ -1,8 +1,15 @@
 # models.py
+import ipaddress
+import re
 from typing import List, Optional, Dict, Any, Union
 from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator
+
+
+INTERFACE_MODES = {"none", "sniff_only", "scan", "advertise", "scan_and_advertise"}
+IP_MODES = {"none", "dhcp", "static"}
+LINUX_IFACE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,14}$")
 
 
 def normalize_service_type_list(values: Any) -> List[str]:
@@ -80,6 +87,67 @@ class SatInterface(BaseModel):
         "none",
         description="none | sniff_only | scan | advertise | scan_and_advertise",
     )
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        value = (value or "").strip()
+        if not value:
+            raise ValueError("interface name must not be empty")
+        if not LINUX_IFACE_RE.fullmatch(value):
+            raise ValueError("interface name must be 1-15 chars and contain only letters, numbers, _ . : -")
+        return value
+
+    @field_validator("parent_interface")
+    @classmethod
+    def validate_parent_interface(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        value = value.strip()
+        if not value:
+            return None
+        if not LINUX_IFACE_RE.fullmatch(value):
+            raise ValueError("parent_interface must be 1-15 chars and contain only letters, numbers, _ . : -")
+        return value
+
+    @field_validator("vlan_id")
+    @classmethod
+    def validate_vlan_id(cls, value: Optional[int]) -> Optional[int]:
+        if value is None:
+            return None
+        if value < 1 or value > 4094:
+            raise ValueError("vlan_id must be between 1 and 4094")
+        return value
+
+    @field_validator("ip_mode")
+    @classmethod
+    def validate_ip_mode(cls, value: str) -> str:
+        value = (value or "none").strip().lower()
+        if value not in IP_MODES:
+            raise ValueError(f"ip_mode must be one of: {', '.join(sorted(IP_MODES))}")
+        return value
+
+    @field_validator("ip_address")
+    @classmethod
+    def validate_ip_address(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        value = value.strip()
+        if not value:
+            return None
+        try:
+            ipaddress.ip_interface(value)
+        except ValueError as exc:
+            raise ValueError("ip_address must be a valid IP address or CIDR interface") from exc
+        return value
+
+    @field_validator("mode")
+    @classmethod
+    def validate_mode(cls, value: str) -> str:
+        value = (value or "none").strip().lower()
+        if value not in INTERFACE_MODES:
+            raise ValueError(f"mode must be one of: {', '.join(sorted(INTERFACE_MODES))}")
+        return value
 
 
 class SatConfig(BaseModel):

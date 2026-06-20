@@ -5,9 +5,11 @@ import importlib.util
 import os
 import sys
 import uuid
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import Response
+import pytest
 from starlette.requests import Request
 import starlette.templating as starlette_templating
 
@@ -354,3 +356,163 @@ def test_api_sat_interfaces_exposes_mgmt_ip_and_client_ip(tmp_path: Path):
     blank = by_id["sat-blank"]
     assert blank["mgmt_ip_address"] is None
     assert blank["client_ip"] is None
+
+
+def test_per_sat_ttl_keeps_registry_online_when_another_sat_has_fresh_service(tmp_path: Path):
+    module = load_hub_module(tmp_path)
+
+    now = datetime.now(timezone.utc)
+    stale_seen = now - timedelta(minutes=20)
+    fresh_seen = now - timedelta(minutes=1)
+
+    stale_instance = module.ServiceInstance(
+        service_name="_ipp._tcp.local",
+        instance_name="Office Printer._ipp._tcp.local",
+        hostname="printer.local",
+        addresses=["10.0.0.20"],
+        port=631,
+        last_seen=stale_seen,
+    )
+    fresh_instance = module.ServiceInstance(
+        service_name="_ipp._tcp.local",
+        instance_name="Office Printer._ipp._tcp.local",
+        hostname="printer.local",
+        addresses=["10.0.1.20"],
+        port=631,
+        last_seen=fresh_seen,
+    )
+    service_key = module.service_key(fresh_instance)
+
+    module.INGESTED_SERVICES_BY_SAT["sat-stale"] = {service_key: stale_instance}
+    module.INGESTED_SERVICES_BY_SAT["sat-fresh"] = {service_key: fresh_instance}
+    module.SERVICE_REGISTRY[service_key] = module.ServiceRegistryEntry(
+        service_key=service_key,
+        last_instance=fresh_instance,
+        last_seen=fresh_seen,
+        last_sat_id="sat-fresh",
+        online=True,
+        spoof_enabled=True,
+        spoof_targets=[module.SpoofTarget(sat_id="sat-target")],
+    )
+
+    request = build_request("/api/v1/satellites/sat-stale/services", method="POST")
+    response = module.ingest_services(
+        "sat-stale",
+        module.ServiceIngestRequest(satellite_id="sat-stale", services=[]),
+        request,
+        True,
+    )
+
+    assert response["known_for_sat"] == 0
+    assert service_key not in module.INGESTED_SERVICES_BY_SAT["sat-stale"]
+
+    entry = module.SERVICE_REGISTRY[service_key]
+    assert entry.online is True
+    assert entry.last_instance == fresh_instance
+    assert entry.last_sat_id == "sat-fresh"
+    assert entry.last_seen == fresh_seen
+
+    assignments = module.build_spoof_assignments_for_sat("sat-target")
+    assert [assignment.service_key for assignment in assignments] == [service_key]
+
+
+def test_assignment_broadcast_timeout_does_not_block_other_satellites(tmp_path: Path, monkeypatch):
+    module = load_hub_module(tmp_path)
+    sent_to: list[str] = []
+
+    class SlowSocket:
+        async def send_json(self, _message):
+            await asyncio.sleep(0.05)
+            sent_to.append("slow")
+
+    class FastSocket:
+        async def send_json(self, _message):
+            sent_to.append("fast")
+
+    module.ACTIVE_SAT_WEBSOCKETS["slow"] = SlowSocket()
+    module.ACTIVE_SAT_WEBSOCKETS["fast"] = FastSocket()
+    monkeypatch.setattr(module, "WS_SEND_TIMEOUT_SECONDS", 0.01)
+
+    asyncio.run(module.broadcast_assignments_to_all_sats())
+
+    assert sent_to == ["fast"]
+    assert "slow" not in module.ACTIVE_SAT_WEBSOCKETS
+    assert "fast" in module.ACTIVE_SAT_WEBSOCKETS
+
+
+def test_satellite_register_updates_named_mgmt_interface_not_first_interface(tmp_path: Path):
+    module = load_hub_module(tmp_path)
+
+    module.SATELLITES["sat-01"] = module.SatMeta(
+        hostname="sat-01.local",
+        mgmt_interface="ens160",
+        mgmt_ip_address="192.168.1.10/24",
+        mgmt_ip_mode="static",
+    )
+    module.SATELLITE_CONFIGS["sat-01"] = module.SatConfig(
+        satellite_id="sat-01",
+        interfaces=[
+            module.SatInterface(
+                name="ens160.230",
+                parent_interface="ens160",
+                vlan_id=230,
+                mode="advertise",
+                ip_mode="none",
+                description="Mobile",
+            ),
+            module.SatInterface(
+                name="ens160",
+                mode="scan",
+                ip_mode="static",
+                ip_address="192.168.1.10/24",
+                description="Mgmt",
+            ),
+        ],
+    )
+
+    request = build_request("/api/v1/satellites/register", method="POST")
+    response = module.register_sat(
+        module.SatRegisterRequest(
+            satellite_id="sat-01",
+            hostname="sat-01.local",
+            auth_token="ignored",
+            mgmt_interface="ens160",
+            mgmt_ip_address="192.168.1.20/24",
+            mgmt_ip_mode="static",
+        ),
+        request,
+        True,
+    )
+
+    interfaces = response.assigned_config.interfaces
+    assert interfaces[0].name == "ens160.230"
+    assert interfaces[0].ip_address is None
+    assert interfaces[1].name == "ens160"
+    assert interfaces[1].ip_address == "192.168.1.20/24"
+
+
+def test_sat_interface_rejects_invalid_values(tmp_path: Path):
+    module = load_hub_module(tmp_path)
+
+    invalid_payloads = [
+        {"name": "", "mode": "scan", "ip_mode": "none"},
+        {"name": "ens160", "mode": "bad", "ip_mode": "none"},
+        {"name": "ens160", "mode": "scan", "ip_mode": "bad"},
+        {"name": "ens160.5000", "parent_interface": "ens160", "vlan_id": 5000, "mode": "scan", "ip_mode": "none"},
+        {"name": "ens160", "mode": "scan", "ip_mode": "static", "ip_address": "not-an-ip"},
+    ]
+
+    for payload in invalid_payloads:
+        with pytest.raises(Exception):
+            module.SatInterface(**payload)
+
+    valid = module.SatInterface(
+        name="ens160.230",
+        parent_interface="ens160",
+        vlan_id=230,
+        mode="scan_and_advertise",
+        ip_mode="static",
+        ip_address="192.168.230.2/24",
+    )
+    assert valid.name == "ens160.230"
+    assert valid.vlan_id == 230
